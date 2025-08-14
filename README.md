@@ -21,7 +21,7 @@ There are two main parts of this repository: the TypeScript library and the [Fil
     - [Comparison Operators](#comparison-operators)
     - [Boolean Fields](#boolean-fields)
     - [Quoted Values](#quoted-values)
-  - [Empty Value Checks](#empty-value-checks)
+    - [Empty Value Checks](#empty-value-checks)
   - [Schemas](#schemas)
   - [API Reference](#api-reference)
     - [`FilterQL` class](#filterql-class)
@@ -190,7 +190,7 @@ Inside a quoted value, double quotes must be escaped:
 title == "A title with \"quotes\""
 ```
 
-### Empty Value Checks
+#### Empty Value Checks
 
 Sometimes the data you're filtering can have empty values (`""`, `undefined`, `null`). You can filter for empty values by comparing to an empty string:
 
