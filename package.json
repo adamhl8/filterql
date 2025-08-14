@@ -27,7 +27,7 @@
   "keywords": ["filterql", "typescript", "query", "language", "data", "filter", "filtering"],
   "scripts": {
     "bundle": "rm -rf ./dist && bun lint && tsc -p tsconfig.build.json && tsc-alias",
-    "lint": "tsc --noEmit && biome check --write && bun test",
+    "lint": "markdown-toc -i --bullets '-' ./README.md && tsc --noEmit && biome check --write && bun test",
     "prepare": "find .githooks -type f -exec ln -srf {} .git/hooks/ \\; || true",
     "prepublishOnly": "bun bundle"
   },
@@ -35,6 +35,7 @@
     "@adamhl8/configs": "^0.10.1",
     "@biomejs/biome": "^2.1.4",
     "@types/bun": "^1.2.20",
+    "markdown-toc": "^1.2.0",
     "tsc-alias": "^1.8.16",
     "type-fest": "^4.41.0",
     "typescript": "^5.9.2"

@@ -1,14 +1,41 @@
 <p align="center">
-<h2 align="center"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="1.5"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-filter-code"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.19 20.27l-2.19 .73v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v1.5" /><path d="M20 21l2 -2l-2 -2" /><path d="M17 17l-2 2l2 2" /></svg> FilterQL</h2>
+<h1 align="center"><img style="color:#36BCF7; width:38px; height:38px;" src="https://raw.githubusercontent.com/adamhl8/filterql/refs/heads/main/assets/logo.svg"> FilterQL</h1>
 </p>
 
 A tiny query language for filtering structured data 🚀
 
-[![Typing SVG](<https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&pause=2000&width=600&lines=(genre+%3D%3D+Action+%7C%7C+genre+%3D%3D+Comedy)+%26%26+year+%3E%3D+2000+%26%26+rating+%3E%3D+8.5>)](https://git.io/typing-svg)
+[![Typing SVG](<https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&pause=7500&width=600&height=25&lines=(genre+%3D%3D+Action+%7C%7C+genre+%3D%3D+Comedy)+%26%26+year+%3E%3D+2000+%26%26+rating+%3E%3D+8.5>)](https://git.io/typing-svg)
 
 There are two main parts of this repository: the TypeScript library and the [FilterQL language specification](#language-specification). Implementations in other languages are more than welcome!
 
 ---
+
+<!-- toc -->
+
+- [TypeScript Library](#typescript-library)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [A more realistic example](#a-more-realistic-example)
+  - [Queries](#queries)
+    - [Logical Operators](#logical-operators)
+    - [Comparison Operators](#comparison-operators)
+    - [Boolean Fields](#boolean-fields)
+    - [Quoted Values](#quoted-values)
+  - [Empty Value Checks](#empty-value-checks)
+  - [Schemas](#schemas)
+  - [API Reference](#api-reference)
+    - [`FilterQL` class](#filterql-class)
+    - [`parse`](#parse)
+- [Language Specification](#language-specification)
+  - [Grammar](#grammar)
+  - [Comparison Operators](#comparison-operators-1)
+    - [String Comparison Operators](#string-comparison-operators)
+    - [Numeric Comparison Operators](#numeric-comparison-operators)
+    - [Case Sensitivity](#case-sensitivity)
+  - [Logical Operators](#logical-operators-1)
+  - [Rules/Restrictions](#rulesrestrictions)
+
+<!-- tocstop -->
 
 ## TypeScript Library
 
@@ -197,7 +224,7 @@ Field types determine validation behavior:
 
 - `string`: The value must be coercible to a string (this is always the case)
 - `number`: The value must be coercible to a number
-- `boolean`: The value must be `true`/`1`/`yes`/`y` or `false`/`0`/`no`/`n`)
+- `boolean`: The value must be `true`/`1`/`yes`/`y` or `false`/`0`/`no`/`n`
 
 ### API Reference
 
