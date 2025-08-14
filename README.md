@@ -233,7 +233,7 @@ Field types determine validation behavior:
 ```ts
 class FilterQL {
   constructor(schema: Schema)
-  filter<T>(data: T[], query: string): T[]
+  filter<T extends Record<string | number | symbol, unknown>>(data: T[], query: string): T[]
 }
 ```
 
