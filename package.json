@@ -1,0 +1,42 @@
+{
+  "name": "filterql",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A tiny query language for filtering structured data",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adamhl8/filterql"
+  },
+  "homepage": "https://github.com/adamhl8/filterql",
+  "bugs": {
+    "url": "https://github.com/adamhl8/filterql/issues"
+  },
+  "author": {
+    "email": "adamhl@pm.me",
+    "name": "Adam Langbert",
+    "url": "https://github.com/adamhl8"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "files": ["dist/"],
+  "keywords": ["filterql", "typescript", "query", "language", "data", "filter", "filtering"],
+  "scripts": {
+    "bundle": "rm -rf ./dist && bun lint && tsc -p tsconfig.build.json && tsc-alias",
+    "lint": "tsc --noEmit && biome check --write && bun test",
+    "prepare": "find .githooks -type f -exec ln -srf {} .git/hooks/ \\; || true",
+    "prepublishOnly": "bun bundle"
+  },
+  "devDependencies": {
+    "@adamhl8/configs": "^0.10.1",
+    "@biomejs/biome": "^2.1.4",
+    "@types/bun": "^1.2.20",
+    "tsc-alias": "^1.8.16",
+    "type-fest": "^4.41.0",
+    "typescript": "^5.9.2"
+  }
+}
