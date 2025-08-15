@@ -11,17 +11,41 @@ const createEofToken = (input: string): Token => ({
 })
 
 describe("lexer", () => {
-  it("should handle input", () => {
-    const input = 'field == "value" && other != test'
+  it("should handle unquoted value", () => {
+    const input = "field == value"
+    const lexer = new Lexer(input)
+    const expected: Token[] = [
+      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+      { type: "IDENTIFIER", value: "value", position: 9 },
+      createEofToken(input),
+    ]
+
+    const tokens = lexer.tokenize()
+    expect(tokens).toEqual(expected)
+  })
+
+  it("should handle quoted value", () => {
+    const input = 'field == "value"'
     const lexer = new Lexer(input)
     const expected: Token[] = [
       { type: "IDENTIFIER", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "QUOTED_VALUE", value: "value", position: 9 },
-      { type: "AND", value: "&&", position: 17 },
-      { type: "IDENTIFIER", value: "other", position: 20 },
-      { type: "COMPARISON_OPERATOR", value: "!=", position: 26 },
-      { type: "IDENTIFIER", value: "test", position: 29 },
+      createEofToken(input),
+    ]
+
+    const tokens = lexer.tokenize()
+    expect(tokens).toEqual(expected)
+  })
+
+  it("should handle empty quoted value", () => {
+    const input = 'field == ""'
+    const lexer = new Lexer(input)
+    const expected: Token[] = [
+      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+      { type: "QUOTED_VALUE", value: "", position: 9 },
       createEofToken(input),
     ]
 
@@ -47,13 +71,13 @@ describe("lexer", () => {
     expect(tokens).toEqual(expected)
   })
 
-  it("should handle quoted values with escape sequences", () => {
-    const input = 'field == "value \\"quoted\\" \\slash"' // 'field == "value \"quoted\" \slash"'
+  it("should handle quoted value with escape sequences", () => {
+    const input = 'field == "value \\"quoted\\" \\slash \\\\doubleslash"' // 'field == "value \"quoted\" \slash \\doubleslash"'
     const lexer = new Lexer(input)
     const expected: Token[] = [
       { type: "IDENTIFIER", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "QUOTED_VALUE", value: 'value "quoted" \\slash', position: 9 },
+      { type: "QUOTED_VALUE", value: 'value "quoted" \\slash \\\\doubleslash', position: 9 },
       createEofToken(input),
     ]
 
@@ -61,13 +85,13 @@ describe("lexer", () => {
     expect(tokens).toEqual(expected)
   })
 
-  it("should handle empty quoted string", () => {
-    const input = 'field == ""'
+  it("should handle reserved characters in quoted value", () => {
+    const input = 'field == "$value&"'
     const lexer = new Lexer(input)
     const expected: Token[] = [
       { type: "IDENTIFIER", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "QUOTED_VALUE", value: "", position: 9 },
+      { type: "QUOTED_VALUE", value: "$value&", position: 9 },
       createEofToken(input),
     ]
 
@@ -144,14 +168,14 @@ describe("lexer", () => {
     expect(tokens).toEqual(expected)
   })
 
-  it("should distinguish ! from !=", () => {
-    const input = "! field != value"
+  it("should distinguish ! from field and !=", () => {
+    const input = "!field != value"
     const lexer = new Lexer(input)
     const expected: Token[] = [
       { type: "NOT", value: "!", position: 0 },
-      { type: "IDENTIFIER", value: "field", position: 2 },
-      { type: "COMPARISON_OPERATOR", value: "!=", position: 8 },
-      { type: "IDENTIFIER", value: "value", position: 11 },
+      { type: "IDENTIFIER", value: "field", position: 1 },
+      { type: "COMPARISON_OPERATOR", value: "!=", position: 7 },
+      { type: "IDENTIFIER", value: "value", position: 10 },
       createEofToken(input),
     ]
 
@@ -162,14 +186,24 @@ describe("lexer", () => {
   it("should throw on unterminated string", () => {
     const input = 'field == "unterminated'
     const lexer = new Lexer(input)
+    expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage("LexerError", "Unterminated string at position 22")
+  })
 
-    expect(() => lexer.tokenize()).toThrow("Unterminated string")
+  it("should throw when a reserved character is used in an identifier", () => {
+    const input = "fi&eld value"
+    const lexer = new Lexer(input)
+    expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage(
+      "LexerError",
+      "Unexpected character '&' at position 2",
+    )
   })
 
   it("should throw on unexpected character", () => {
     const input = "field & value"
     const lexer = new Lexer(input)
-
-    expect(() => lexer.tokenize()).toThrow("Unexpected character")
+    expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage(
+      "LexerError",
+      "Unexpected character '&' at position 6",
+    )
   })
 })

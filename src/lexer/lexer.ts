@@ -1,7 +1,7 @@
 import type { Entries } from "type-fest"
 
 import type { Token } from "~/lexer/types.js"
-import { comparisonOperatorCharacters, tokenCharacters, tokenTypeMap } from "~/lexer/types.js"
+import { comparisonOperatorCharacters, comparisonOperators, reservedCharacters, tokenTypeMap } from "~/lexer/types.js"
 
 const WHITESPACE = /\s/
 
@@ -23,18 +23,19 @@ export class Lexer {
    */
   private readonly tokenHandlers = {
     IDENTIFIER: () => {
-      const forbidden = [" ", "\t", "\n", "\r", ...tokenCharacters]
       let identifier = ""
 
-      while (this.position < this.input.length && !forbidden.includes(this.current)) {
-        // edge case: don't consume 'i' if it's followed by an operator character
-        if (this.current === "i" && comparisonOperatorCharacters.includes(this.peek())) break
+      while (this.position < this.input.length && !reservedCharacters.includes(this.current)) {
+        // edge case: don't consume 'i' if it's followed by an operator
+        const next = this.peek()
+        if (this.current === "i" && comparisonOperatorCharacters.includes(next)) break
 
         identifier += this.current
         this.advanceBy(1)
       }
 
-      return identifier || undefined
+      if (identifier) return identifier
+      return
     },
     COMPARISON_OPERATOR: () => {
       let operator = ""
@@ -48,7 +49,7 @@ export class Lexer {
         }
       }
 
-      for (const op of tokenTypeMap.COMPARISON_OPERATOR) {
+      for (const op of comparisonOperators) {
         if (this.matchesString(op)) {
           operator += op
           this.advanceBy(op.length)
@@ -62,25 +63,26 @@ export class Lexer {
       return
     },
     QUOTED_VALUE: () => {
-      const quote = tokenTypeMap.QUOTED_VALUE
-      if (this.current !== quote) return
+      const QUOTE_CHAR = tokenTypeMap.QUOTED_VALUE
+      const BACKSLASH_CHAR = "\\"
+      if (this.current !== QUOTE_CHAR) return
 
       let value = ""
       this.advanceBy(1) // Skip opening quote
 
-      while (this.position < this.input.length && this.current !== quote) {
-        if (this.current === "\\") {
+      while (this.position < this.input.length && this.current !== QUOTE_CHAR) {
+        if (this.current === BACKSLASH_CHAR) {
           // Handle escaped characters
           this.advanceBy(1)
-          if (this.current === quote || this.current === "\\") value += this.current
-          else value += `\\${this.current}`
+          if (this.current === QUOTE_CHAR) value += this.current
+          else value += `${BACKSLASH_CHAR}${this.current}`
         } else {
           value += this.current
         }
         this.advanceBy(1)
       }
 
-      if (this.current !== quote) throw new Error(`Unterminated string at position ${this.position}`)
+      if (this.current !== QUOTE_CHAR) throw new LexerError(`Unterminated string at position ${this.position}`)
 
       this.advanceBy(1) // Skip closing quote
       return value // an empty quoted value is valid, so we don't return undefined here even if it's empty
@@ -152,7 +154,7 @@ export class Lexer {
       if (tokenValue !== undefined) return { type: tokenType, value: tokenValue, position: tokenStart }
     }
 
-    throw new Error(`Unexpected character '${this.current}' at position ${this.position}`)
+    throw new LexerError(`Unexpected character '${this.current}' at position ${this.position}`)
   }
 
   private skipWhitespace(): void {
@@ -176,5 +178,13 @@ export class Lexer {
 
   private matchesString(str: string): boolean {
     return this.input.slice(this.position, this.position + str.length) === str
+  }
+}
+
+class LexerError extends Error {
+  public constructor(message: string) {
+    super(message)
+    Object.setPrototypeOf(this, new.target.prototype)
+    this.name = "LexerError"
   }
 }

@@ -1,18 +1,15 @@
-export const stringOperators = [
+export const comparisonOperators = [
   "==", // equals
   "!=", // not equals
   "*=", // contains
   "^=", // starts with
   "$=", // ends with
   "~=", // regex
-] as const
-
-export const numericOperators = [
   ">=", // greater than or equal to
   "<=", // less than or equal to
 ] as const
 
-export const comparisonOperators = [...stringOperators, ...numericOperators] as const
+export const comparisonOperatorCharacters = comparisonOperators.map((op) => op[0] ?? "").filter(Boolean)
 
 /**
  * A map of token types to their corresponding reserved characters/strings.
@@ -29,15 +26,15 @@ export const tokenTypeMap = {
   EOF: "", // end of input
 } as const
 
-export const comparisonOperatorCharacters = comparisonOperators.map((op) => op[0] ?? "").filter(Boolean)
-
-/**
- * An array of the first character of each token. Used as part of the list of forbidden characters during lexing.
- */
-export const tokenCharacters = Object.values(tokenTypeMap)
+const tokenCharacters = Object.values(tokenTypeMap)
   .flat()
   .map((char) => char[0] ?? "")
   .filter(Boolean)
+
+/**
+ * An array of reserved characters. An IDENTIFIER can not contain any of these characters.
+ */
+export const reservedCharacters = [" ", "\t", "\n", "\r", "\\", ...tokenCharacters]
 
 type TokenType = keyof typeof tokenTypeMap
 

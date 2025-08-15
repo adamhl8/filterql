@@ -1,36 +1,44 @@
-import { Evaluator } from "~/evaluator.js"
+import { Evaluator } from "~/evaluator/evaluator.js"
+import type { Data, EvaluatorOptions, Schema } from "~/evaluator/types.js"
 import { Lexer } from "~/lexer/lexer.js"
 import { Parser } from "~/parser/parser.js"
-import type { ASTNode, Schema } from "~/parser/types.js"
+import type { ASTNode } from "~/parser/types.js"
 
-/**
- * Parse a query string into an AST
- */
-export function parse(query: string, schema: Schema): ASTNode {
-  const lexer = new Lexer(query)
-  const tokens = lexer.tokenize()
-  const parser = new Parser(tokens, schema)
-  return parser.parse()
-}
+export interface FilterQLOptions extends EvaluatorOptions {}
+
+const DEFAULT_OPTIONS: FilterQLOptions = { ignoreUnknownFields: false }
 
 export class FilterQL {
-  private readonly schema: Schema
+  private readonly options: FilterQLOptions
   private readonly evaluator: Evaluator
 
-  public constructor(schema: Schema) {
-    this.schema = schema
-    this.evaluator = new Evaluator()
+  public constructor(schema: Schema, options?: FilterQLOptions) {
+    this.options = { ...DEFAULT_OPTIONS, ...options }
+    this.evaluator = new Evaluator(schema, this.options)
+  }
+
+  /**
+   * Parse a query string into an AST
+   */
+  private parseQuery(query: string): ASTNode {
+    const lexer = new Lexer(query)
+    const tokens = lexer.tokenize()
+    const parser = new Parser(tokens)
+    return parser.parse()
   }
 
   /**
    * Filter an array of objects based on a query
    */
-  public filter<T extends Record<string | number | symbol, unknown>>(data: T[], query: string): T[] {
+  public filter<T extends Data>(data: T[], query: string): T[] {
     if (!query.trim()) return data
 
-    const ast = parse(query, this.schema)
+    const ast = this.parseQuery(query)
     return data.filter((item) => this.evaluator.evaluate(ast, item))
   }
 }
 
-export type { Schema } from "~/parser/types.js"
+export { Evaluator } from "~/evaluator/evaluator.js"
+export type { Schema } from "~/evaluator/types.js"
+export { Lexer } from "~/lexer/lexer.js"
+export { Parser } from "~/parser/parser.js"

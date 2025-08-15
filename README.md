@@ -23,17 +23,15 @@ There are two main parts of this repository: the TypeScript library and the [Fil
     - [Quoted Values](#quoted-values)
     - [Empty Value Checks](#empty-value-checks)
   - [Schemas](#schemas)
+  - [FilterQL Options](#filterql-options)
   - [API Reference](#api-reference)
     - [`FilterQL` class](#filterql-class)
-    - [`parse`](#parse)
 - [Language Specification](#language-specification)
   - [Grammar](#grammar)
   - [Comparison Operators](#comparison-operators-1)
-    - [String Comparison Operators](#string-comparison-operators)
-    - [Numeric Comparison Operators](#numeric-comparison-operators)
-    - [Case Sensitivity](#case-sensitivity)
   - [Logical Operators](#logical-operators-1)
-  - [Rules/Restrictions](#rulesrestrictions)
+  - [Syntax Rules](#syntax-rules)
+  - [Implementation](#implementation)
 
 <!-- tocstop -->
 
@@ -120,13 +118,19 @@ The most basic query is a single comparison: `<field> <comparison operator> <val
 title == Interstellar
 ```
 
+You can also use the alias for a field:
+
+```
+t == Interstellar
+```
+
 Combine multiple comparisons using logical operators for more complex queries:
 
 ```
 title == Interstellar && year == 2014
 ```
 
-Spaces are optional: `title == Interstellar` is equivalent to `title==Interstellar`.
+Whitespace is ignored/optional: `title == Interstellar` is equivalent to `title==Interstellar`.
 
 #### Logical Operators
 
@@ -156,7 +160,7 @@ The following comparison operators can be used in comparisons:
 - `>=` (greater than or equal)
 - `<=` (less than or equal)
 
-By default, comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`:
+Comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`:
 
 ```
 title i== interstellar
@@ -188,6 +192,12 @@ Inside a quoted value, double quotes must be escaped:
 
 ```
 title == "A title with \"quotes\""
+```
+
+Values containing [reserved characters](#syntax-rules) must be quoted:
+
+```
+title == "Airplane!"
 ```
 
 #### Empty Value Checks
@@ -226,24 +236,30 @@ Field types determine validation behavior:
 - `number`: The value must be coercible to a number
 - `boolean`: The value must be `true`/`1`/`yes`/`y` or `false`/`0`/`no`/`n`
 
+### FilterQL Options
+
+```ts
+const filterql = new FilterQL(schema, {
+  ignoreUnknownFields: true,
+})
+```
+
+The `FilterQL` constructor accepts an optional `options` object with the following properties:
+
+- `ignoreUnknownFields` (default: `false`): By default, an error is thrown if a query contains an unknown field. If `true`, unknown fields are ignored (they always match).
+
 ### API Reference
 
 #### `FilterQL` class
 
 ```ts
 class FilterQL {
-  constructor(schema: Schema)
+  constructor(schema: Schema, options?: FilterQLOptions)
   filter<T extends Record<string | number | symbol, unknown>>(data: T[], query: string): T[]
 }
 ```
 
-#### `parse`
-
-```ts
-function parse(query: string, schema: Schema): ASTNode
-```
-
-You can use the `parse` function to parse a query string into an AST if you want to do some kind of custom evaluation.
+The `Lexer`, `Parser`, and `Evaluator` classes are also exported if you want to do something custom.
 
 ## Language Specification
 
@@ -261,49 +277,42 @@ comparison := field operator value | field
 
 ### Comparison Operators
 
-#### String Comparison Operators
+| Operator | Description           | Example                 |
+| -------- | --------------------- | ----------------------- |
+| `==`     | Equals                | `title == Interstellar` |
+| `!=`     | Not equals            | `title != "The Matrix"` |
+| `*=`     | Contains              | `title *= "Matrix"`     |
+| `^=`     | Starts with           | `title ^= The`          |
+| `$=`     | Ends with             | `title $= Knight`       |
+| `~=`     | Regular expression    | `title ~= ".*Matrix.*"` |
+| `>=`     | Greater than or equal | `year >= 2000`          |
+| `<=`     | Less than or equal    | `rating <= 8.0`         |
 
-| Operator | Description        | Example                 |
-| -------- | ------------------ | ----------------------- |
-| `==`     | Equals             | `title == "Matrix"`     |
-| `!=`     | Not equals         | `title != "Matrix"`     |
-| `*=`     | Contains           | `title *= "Matrix"`     |
-| `^=`     | Starts with        | `title ^= "The"`        |
-| `$=`     | Ends with          | `title $= "Knight"`     |
-| `~=`     | Regular expression | `title ~= ".*Matrix.*"` |
-
-#### Numeric Comparison Operators
-
-| Operator | Description           | Example         |
-| -------- | --------------------- | --------------- |
-| `>=`     | Greater than or equal | `year >= 2000`  |
-| `<=`     | Less than or equal    | `rating <= 8.0` |
-
-#### Case Sensitivity
-
-- Any comparison operator can be prefixed with `i` to make it case-insensitive: `title i== "matrix"`
-- Prefixing a numeric comparison operator with `i` has no effect and is effectively ignored
+- Any comparison operator can be prefixed with `i` (used to make a comparison case-insensitive): `title i== "the matrix"`
 
 ### Logical Operators
 
-| Operator | Description            | Example                                   | Precedence (in order from highest to lowest) |
-| -------- | ---------------------- | ----------------------------------------- | -------------------------------------------- |
-| `()`     | Parentheses (grouping) | `(year >= 2000 && year <= 2010)`          | Highest precedence                           |
-| `!`      | NOT                    | `!monitored`                              | Right associative                            |
-| `&&`     | AND                    | `monitored && year >= 2000`               | Left associative                             |
-| `\|\|`   | OR                     | `genre == "Action" \|\| genre == "Drama"` | Left associative                             |
+| Operator | Description            | Example                               | Precedence (in order from highest to lowest) |
+| -------- | ---------------------- | ------------------------------------- | -------------------------------------------- |
+| `()`     | Parentheses (grouping) | `(year >= 2000 && year <= 2010)`      | Highest precedence                           |
+| `!`      | NOT                    | `!title *= Matrix`                    | Right associative                            |
+| `&&`     | AND                    | `monitored && year >= 2000`           | Left associative                             |
+| `\|\|`   | OR                     | `genre == Action \|\| genre == Drama` | Left associative                             |
 
-### Rules/Restrictions
+### Syntax Rules
 
-- A field **cannot** contain the following characters: whitespace (` `, `\t`, `\n`, `\r`), reserved token characters (`(`, `)`, `!`, `&`, `\|`, `"`, `=`, `*`, `^`, `$`, `~`, `>`, `<`)
-- Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
-- Values are either **unquoted** or **quoted**
-  - Values requiring spaces are enclosed in double quotes: `"The Matrix"`
-  - Double quotes (`"`) are the only valid quotes for values
-  - Double quotes inside quoted values are escaped with a backslash: `"a value with \"quotes\""`
+- Whitespace (spaces, tabs, newlines) is ignored/optional
+- Queries are terminated by end of input
+- A field (or unquoted value) **cannot** contain the following characters: whitespace (` `, `\t`, `\n`, `\r`), reserved token characters (`"`, `\`, `(`, `)`, `!`, `&`, `\|`, `=`, `*`, `^`, `$`, `~`, `>`, `<`)
+  - This means that a value must be quoted if it contains any of these characters
+- A field can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
+- A value is either **unquoted** or **quoted**
+  - A value requiring spaces must be enclosed in double quotes: `"The Matrix"`
+  - Double quotes (`"`) are the only valid quotes
+  - Double quotes inside quoted values are escaped with a backslash (`\"`): `"a value with \"quotes\""`
     - This is the only supported escape sequence
-- An empty string value (`""`) matches empty values (e.g. `""`, `undefined`, `null`): `title == ""`
-  - This only works with the `==` and `!=` comparison operators. e.g. `title *= ""` is not an error, but it will never match anything
-- The values of `1`/`yes`/`y` (case-insensitive) are coerced to `true`. The field values of `0`/`no`/`n` (case-insensitive) are coerced to `false`
-- When a numeric operator is used (`>=`, `<=`), the value **must** be a valid number
-- For the `~=` comparison operator, invalid regex patterns do not cause an error and never match
+  - Empty quoted values are valid: `""`
+
+### Implementation
+
+This repository serves as a reference implementation for the language. See the [evaluator.ts](./src/evaluator/evaluator.ts) for implementation details.
