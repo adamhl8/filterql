@@ -6,9 +6,9 @@ A tiny query language for filtering structured data 🚀
 
 [![Typing SVG](<https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&pause=7500&width=600&height=25&lines=(genre+%3D%3D+Action+%7C%7C+genre+%3D%3D+Comedy)+%26%26+year+%3E%3D+2000+%26%26+rating+%3E%3D+8.5>)](https://git.io/typing-svg)
 
-There are two main parts of this repository: the TypeScript library and the [FilterQL language specification](#language-specification). Implementations in other languages are more than welcome!
-
 ---
+
+There are two main parts of this repository: the TypeScript library and the [FilterQL language specification](#language-specification). Implementations in other languages are more than welcome!
 
 <!-- toc -->
 
