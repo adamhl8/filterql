@@ -1,6 +1,6 @@
 {
   "name": "filterql",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "description": "A tiny query language for filtering structured data",
   "repository": {
@@ -20,7 +20,7 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/index.d.ts"
     }
   },
   "files": ["dist/"],
@@ -32,7 +32,7 @@
     "prepublishOnly": "bun bundle"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.11.0",
+    "@adamhl8/configs": "^0.11.1",
     "@biomejs/biome": "^2.2.0",
     "@types/bun": "^1.2.20",
     "markdown-toc": "^1.2.0",
