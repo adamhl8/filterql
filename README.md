@@ -319,4 +319,4 @@ title i== "the matrix"
 
 ### Implementation
 
-This repository serves as a reference implementation for the language. See the [evaluator.ts](./src/evaluator/evaluator.ts) for implementation details.
+This repository serves as a reference implementation for the language. See [evaluator.ts](./src/evaluator/evaluator.ts) for implementation details.
