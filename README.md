@@ -288,8 +288,11 @@ comparison := field operator value | field
 | `>=`     | Greater than or equal | `year >= 2000`          |
 | `<=`     | Less than or equal    | `rating <= 8.0`         |
 
-- Any comparison operator can be prefixed with `i` (used to make a comparison case-insensitive):
-  `title i== "the matrix"`
+Any comparison operator can be prefixed with `i` (used to make a comparison case-insensitive):
+
+```
+title i== "the matrix"
+```
 
 ### Logical Operators
 
