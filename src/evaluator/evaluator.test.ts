@@ -38,7 +38,7 @@ const testData = {
   status: "Available",
   undefinedField: undefined,
   nullField: null,
-  bar: "some value", // field that's not in the data
+  bar: "some value", // field that's not in the schema
 }
 
 describe("evaluator", () => {

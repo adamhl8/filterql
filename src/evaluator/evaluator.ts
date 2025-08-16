@@ -104,7 +104,7 @@ export class Evaluator {
 
     // Below, we coerce dataValue to a string. If dataValue is undefined/null, a query like 'field == undefined' will match, which we don't want
     // To be clear, a query like 'field == undefined' is a query for the *string* "undefined", not a literal undefined value
-    // This check must come after the empty check, since that's the correct way to check for a undefined/null/"" value
+    // This check must come after the empty check, since that's the correct way to check for a ""/undefined/null value
     if (isEmpty(dataValue)) return false
 
     const handleCaseSensitivity = (val: string) => (isCaseInsensitive ? val.toLowerCase() : val)
@@ -119,7 +119,7 @@ export class Evaluator {
     if (operator === "~=") {
       try {
         const flags = isCaseInsensitive ? "i" : ""
-        // using valueString/dataValueString (which are lowercase) wouldn't make sense here
+        // using valueString/dataValueString (which might be lowercase) wouldn't make sense here
         const regex = new RegExp(value, flags)
         return regex.test(String(dataValue))
       } catch {
