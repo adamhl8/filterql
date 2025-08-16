@@ -6,7 +6,7 @@ import type { ASTNode } from "~/parser/types.js"
 
 export interface FilterQLOptions extends EvaluatorOptions {}
 
-const DEFAULT_OPTIONS: FilterQLOptions = { ignoreUnknownFields: false }
+const DEFAULT_OPTIONS: FilterQLOptions = { allowUnknownFields: false }
 
 export class FilterQL {
   private readonly options: FilterQLOptions

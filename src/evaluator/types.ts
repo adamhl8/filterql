@@ -17,7 +17,7 @@ export interface Comparison {
 }
 
 export interface EvaluatorOptions {
-  ignoreUnknownFields: boolean
+  allowUnknownFields: boolean
 }
 
 export type Data = Record<string | number | symbol, unknown>

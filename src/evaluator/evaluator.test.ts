@@ -20,13 +20,26 @@ const testSchema: Schema = {
   rating: { type: "number" },
   genre: { type: "string" },
   status: { type: "string" },
+  undefinedField: { type: "string" },
+  nullField: { type: "string" },
+  foo: { type: "string" }, // field that's not in the data
 }
 
 const testOptions: EvaluatorOptions = {
-  ignoreUnknownFields: false,
+  allowUnknownFields: false,
 }
 
-const testData = { title: "The Matrix", year: 1999, monitored: true, rating: 8.7, genre: "Action", status: "Available" }
+const testData = {
+  title: "The Matrix",
+  year: 1999,
+  monitored: true,
+  rating: 8.7,
+  genre: "Action",
+  status: "Available",
+  undefinedField: undefined,
+  nullField: null,
+  bar: "some value", // field that's not in the data
+}
 
 describe("evaluator", () => {
   it("should return false for a non-matching comparison", () => {
@@ -69,17 +82,41 @@ describe("evaluator", () => {
     expect(result).toBeTrue()
   })
 
-  it.each(["true", "1", "yes", "y"])("should convert valid 'true' values for boolean fields ('%s')", (trueValue) => {
-    const evaluator = new Evaluator(testSchema, testOptions)
-    const node = parseQuery(`monitored == ${trueValue}`)
+  it("should handle unknown fields when 'allowUnknownFields' is true", () => {
+    const evaluator = new Evaluator(testSchema, { allowUnknownFields: true })
+    const node = parseQuery('bar == "some value"')
     const result = evaluator.evaluate(node, testData)
 
     expect(result).toBeTrue()
   })
 
-  it.each(["false", "0", "no", "n"])("should convert valid 'false' values for boolean fields ('%s')", (falseValue) => {
+  it("should handle comparison to undefined", () => {
     const evaluator = new Evaluator(testSchema, testOptions)
-    const node = parseQuery(`monitored == ${falseValue}`)
+    const node = parseQuery("undefinedField == undefined")
+    const result = evaluator.evaluate(node, testData)
+
+    expect(result).toBeFalse()
+  })
+
+  it("should handle comparison to null", () => {
+    const evaluator = new Evaluator(testSchema, testOptions)
+    const node = parseQuery("undefinedField == null")
+    const result = evaluator.evaluate(node, testData)
+
+    expect(result).toBeFalse()
+  })
+
+  it("should handle fields that are not in the data", () => {
+    const evaluator = new Evaluator(testSchema, testOptions)
+    const node = parseQuery('foo == "some value"')
+    const result = evaluator.evaluate(node, testData)
+
+    expect(result).toBeFalse()
+  })
+
+  it("should handle empty checks for fields that are not in the data", () => {
+    const evaluator = new Evaluator(testSchema, testOptions)
+    const node = parseQuery('foo == ""')
     const result = evaluator.evaluate(node, testData)
 
     expect(result).toBeFalse()
@@ -292,22 +329,16 @@ describe("evaluator", () => {
 
     it("should throw on unknown field", () => {
       const evaluator = new Evaluator(testSchema, testOptions)
-      const node = parseQuery('unknown == "the matrix"')
+      const node = parseQuery('bar == "some value"')
       expect(() => evaluator.evaluate(node, testData)).toThrowErrorWithNameAndMessage(
         "EvaluationError",
-        "Unknown field 'unknown'",
+        "Unknown field 'bar'",
       )
     })
 
-    it("should not throw on unknown field when 'ignoreUnknownFields' is true", () => {
-      const evaluator = new Evaluator(testSchema, { ignoreUnknownFields: true })
-      const node = parseQuery('unknown == "the matrix"')
-      expect(() => evaluator.evaluate(node, testData)).not.toThrow()
-    })
-
-    it("should throw on an invalid value for a number field", () => {
+    it("should throw on invalid value for a number field", () => {
       const evaluator = new Evaluator(testSchema, testOptions)
-      const node = parseQuery("year <= hello")
+      const node = parseQuery("year == hello")
       expect(() => evaluator.evaluate(node, testData)).toThrowErrorWithNameAndMessage(
         "EvaluationError",
         "Invalid value 'hello' for field 'year' (number)",
@@ -316,10 +347,10 @@ describe("evaluator", () => {
 
     it("should throw when a numeric operator is not used with a number", () => {
       const evaluator = new Evaluator(testSchema, testOptions)
-      const node = parseQuery("title <= hello")
+      const node = parseQuery("year <= hello")
       expect(() => evaluator.evaluate(node, testData)).toThrowErrorWithNameAndMessage(
         "EvaluationError",
-        "Invalid value 'hello' for field 'title': the '<=' operator must be used with a number",
+        "Invalid value 'hello' for field 'year': the '<=' operator must be used with a number",
       )
     })
 

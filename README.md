@@ -174,12 +174,6 @@ For boolean fields, you can use the field name without any comparison to check f
 
 `!downloaded` is equivalent to `!(downloaded == true)`
 
-If you want to be more explicit, in addition to `true` you can use `1`, `yes`, or `y`. In addition to `false`, you can use `0`, `no`, or `n`.
-
-`downloaded == 1`, `downloaded == yes`, `downloaded == y`
-
-`downloaded == 0`, `downloaded == no`, `downloaded == n`
-
 #### Quoted Values
 
 If your comparison value has spaces, you must enclose it in double quotes:
@@ -202,7 +196,7 @@ title == "Airplane!"
 
 #### Empty Value Checks
 
-Sometimes the data you're filtering can have empty values (`""`, `undefined`, `null`). You can filter for empty values by comparing to an empty string:
+Sometimes the data you're filtering might have empty values (`""`, `undefined`, `null`). You can filter for empty values by comparing to an empty string:
 
 Get all entries that _don't_ have a rating:
 
@@ -234,19 +228,19 @@ Field types determine validation behavior:
 
 - `string`: The value must be coercible to a string (this is always the case)
 - `number`: The value must be coercible to a number
-- `boolean`: The value must be `true`/`1`/`yes`/`y` or `false`/`0`/`no`/`n`
+- `boolean`: The value must be `true` or `false`
 
 ### FilterQL Options
 
 ```ts
 const filterql = new FilterQL(schema, {
-  ignoreUnknownFields: true,
+  allowUnknownFields: true,
 })
 ```
 
 The `FilterQL` constructor accepts an optional `options` object with the following properties:
 
-- `ignoreUnknownFields` (default: `false`): By default, an error is thrown if a query contains an unknown field. If `true`, unknown fields are ignored (they always match).
+- `allowUnknownFields` (default: `false`): By default, an error is thrown if a query contains a field that's not in the schema. If `true`, unknown fields are allowed.
 
 ### API Reference
 

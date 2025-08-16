@@ -42,43 +42,43 @@ export class Evaluator {
 
   /**
    * Resolves the field/alias and validates it against the schema
-   *
-   * A return of `undefined` indicates that the comparison should be skipped
    */
-  private resolveComparison(node: ComparisonNode): Comparison | undefined {
-    let { field, operator, value } = node
-
+  private resolveComparison(node: ComparisonNode): Comparison {
     // field is either the full field name or an alias
-    field = this.fieldMap.get(field) ?? field
+    const field = this.fieldMap.get(node.field) ?? node.field
     const fieldConfig = this.schema[field]
-    if (!fieldConfig) {
-      if (this.options.ignoreUnknownFields) return
-      throw new EvaluationError(`Unknown field '${field}'`)
-    }
 
-    const { type } = fieldConfig
-
-    const isCaseInsensitive = operator.startsWith("i")
+    const isCaseInsensitive = node.operator.startsWith("i")
     // Remove 'i' prefix
-    operator = (isCaseInsensitive ? operator.slice(1) : operator) as BaseComparisonOperator
+    const operator = (isCaseInsensitive ? node.operator.slice(1) : node.operator) as BaseComparisonOperator
 
-    // we don't need to check for type === "string" because it's always valid
-
+    const value = node.value
     const isValidNumber = isNumber(value)
-    if (type === "number" && !isValidNumber)
-      throw new EvaluationError(`Invalid value '${value}' for field '${field}' (${type})`)
 
+    // this check is not specific to any field type, but rather a general rule for numeric operators
     const isNumericOperator = [">=", "<="].includes(operator)
     if (isNumericOperator && !isValidNumber)
       throw new EvaluationError(
         `Invalid value '${value}' for field '${field}': the '${operator}' operator must be used with a number`,
       )
 
+    if (!fieldConfig) {
+      // if the field isn't in the schema and allowUnknownFields is true, give the field back as is
+      if (this.options.allowUnknownFields) return { field, operator, value, isCaseInsensitive }
+      throw new EvaluationError(`Unknown field '${field}'`)
+    }
+
+    const { type } = fieldConfig
+
+    // we don't need to check for type === "string" because it's always valid
+
+    if (type === "number" && !isValidNumber)
+      throw new EvaluationError(`Invalid value '${value}' for field '${field}' (${type})`)
+
     if (type === "boolean") {
       const lower = value.toLowerCase()
-      if (["true", "1", "yes", "y"].includes(lower)) value = "true"
-      else if (["false", "0", "no", "n"].includes(lower)) value = "false"
-      else throw new EvaluationError(`Invalid value '${value}' for field '${field}' (${type})`)
+      if (lower !== "true" && lower !== "false")
+        throw new EvaluationError(`Invalid value '${value}' for field '${field}' (${type})`)
     }
 
     return { field, operator, value, isCaseInsensitive }
@@ -86,13 +86,14 @@ export class Evaluator {
 
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
   private evaluateComparison(node: ComparisonNode, data: Data): boolean {
-    const comparison = this.resolveComparison(node)
-    if (!comparison) return true // invalid comparisons are ignored
-    const { field, operator, value, isCaseInsensitive } = comparison
+    const { field, operator, value, isCaseInsensitive } = this.resolveComparison(node)
+
+    // if the data doesn't have the field at all, it shouldn't be matched
+    if (!Object.hasOwn(data, field)) return false
 
     const dataValue = data[field]
 
-    const isEmpty = (val: unknown) => val === null || val === undefined || val === ""
+    const isEmpty = (val: unknown) => val === "" || val === undefined || val === null
     // if the comparison value is "", it's an empty check
     if (value === "") {
       if (operator === "==") return isEmpty(dataValue)
@@ -100,6 +101,11 @@ export class Evaluator {
       // it doesn't make sense to do empty checks with other operators
       return false
     }
+
+    // Below, we coerce dataValue to a string. If dataValue is undefined/null, a query like 'field == undefined' will match, which we don't want
+    // To be clear, a query like 'field == undefined' is a query for the *string* "undefined", not a literal undefined value
+    // This check must come after the empty check, since that's the correct way to check for a undefined/null/"" value
+    if (isEmpty(dataValue)) return false
 
     const handleCaseSensitivity = (val: string) => (isCaseInsensitive ? val.toLowerCase() : val)
     const valueString = handleCaseSensitivity(value)
