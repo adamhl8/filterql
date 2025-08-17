@@ -234,7 +234,7 @@ Field types determine validation behavior:
 
 ```ts
 const filterql = new FilterQL(schema, {
-  allowUnknownFields: true,
+  allowUnknownFields: false,
 })
 ```
 
