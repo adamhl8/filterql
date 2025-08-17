@@ -25,7 +25,11 @@ export class Lexer {
   private readonly tokenHandlers = {
     FIELD: () => {
       let field = ""
-      let backtrackCount = 0
+
+      const previousToken = this.tokens.at(-1)
+      // VALUE tokens are *always* preceded by a comparison operator
+      // if this is true, then this is a value
+      if (previousToken && previousToken.type === "COMPARISON_OPERATOR") return
 
       while (this.position < this.input.length && !isTerminator(this.current + this.peekBy(1))) {
         // don't consume 'i' if it's followed by an operator
@@ -34,15 +38,6 @@ export class Lexer {
 
         field += this.current
         this.advanceBy(1)
-        backtrackCount--
-      }
-
-      const previousToken = this.tokens.at(-1)
-      // VALUE tokens are *always* preceded by a comparison operator
-      // if this is true, then the field is actually a value
-      if (previousToken && previousToken.type === "COMPARISON_OPERATOR") {
-        this.advanceBy(backtrackCount)
-        return
       }
 
       if (field) return field
