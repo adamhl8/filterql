@@ -11,13 +11,13 @@ const createEofToken = (input: string): Token => ({
 })
 
 describe("lexer", () => {
-  it("should handle unquoted value", () => {
+  it("should handle value", () => {
     const input = "field == value"
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "IDENTIFIER", value: "value", position: 9 },
+      { type: "VALUE", value: "value", position: 9 },
       createEofToken(input),
     ]
 
@@ -29,7 +29,7 @@ describe("lexer", () => {
     const input = 'field == "value"'
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "QUOTED_VALUE", value: "value", position: 9 },
       createEofToken(input),
@@ -43,7 +43,7 @@ describe("lexer", () => {
     const input = 'field == ""'
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "QUOTED_VALUE", value: "", position: 9 },
       createEofToken(input),
@@ -57,13 +57,27 @@ describe("lexer", () => {
     const input = 'field=="value"&& other  !=   test'
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 5 },
       { type: "QUOTED_VALUE", value: "value", position: 7 },
       { type: "AND", value: "&&", position: 14 },
-      { type: "IDENTIFIER", value: "other", position: 17 },
+      { type: "FIELD", value: "other", position: 17 },
       { type: "COMPARISON_OPERATOR", value: "!=", position: 24 },
-      { type: "IDENTIFIER", value: "test", position: 29 },
+      { type: "VALUE", value: "test", position: 29 },
+      createEofToken(input),
+    ]
+
+    const tokens = lexer.tokenize()
+    expect(tokens).toEqual(expected)
+  })
+
+  it("should handle whitespace in input", () => {
+    const input = " field == value "
+    const lexer = new Lexer(input)
+    const expected: Token[] = [
+      { type: "FIELD", value: "field", position: 1 },
+      { type: "COMPARISON_OPERATOR", value: "==", position: 7 },
+      { type: "VALUE", value: "value", position: 10 },
       createEofToken(input),
     ]
 
@@ -75,7 +89,7 @@ describe("lexer", () => {
     const input = 'field == "value \\"quoted\\" \\slash \\\\doubleslash"' // 'field == "value \"quoted\" \slash \\doubleslash"'
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "QUOTED_VALUE", value: 'value "quoted" \\slash \\\\doubleslash', position: 9 },
       createEofToken(input),
@@ -89,7 +103,7 @@ describe("lexer", () => {
     const input = 'field == "$value&"'
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "field", position: 0 },
+      { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "QUOTED_VALUE", value: "$value&", position: 9 },
       createEofToken(input),
@@ -100,13 +114,32 @@ describe("lexer", () => {
   })
 
   it("should handle all comparison operators", () => {
-    const input = comparisonOperators.join(" ")
+    const input = comparisonOperators.map((op) => `field ${op} value`).join(" && ")
     const lexer = new Lexer(input)
-    const expectedTokens: Token[] = comparisonOperators.map((op) => ({
-      type: "COMPARISON_OPERATOR",
-      value: op,
-      position: input.indexOf(op),
-    }))
+    const expectedTokens: Token[] = comparisonOperators
+      .flatMap((op, index) => [
+        {
+          type: "FIELD",
+          value: "field",
+          position: index * 18,
+        },
+        {
+          type: "COMPARISON_OPERATOR",
+          value: op,
+          position: index * 18 + 6,
+        },
+        {
+          type: "VALUE",
+          value: "value",
+          position: index * 18 + 9,
+        },
+        {
+          type: "AND",
+          value: "&&",
+          position: index * 18 + 15,
+        },
+      ])
+      .slice(0, -1) as Token[] // get rid of the last AND token
     const expected: Token[] = [...expectedTokens, createEofToken(input)]
 
     const tokens = lexer.tokenize()
@@ -114,26 +147,59 @@ describe("lexer", () => {
   })
 
   it("should handle all case-insensitive comparison operators", () => {
-    const input = comparisonOperators.map((op) => `i${op}`).join(" ")
+    const input = comparisonOperators.map((op) => `field i${op} value`).join(" && ")
     const lexer = new Lexer(input)
-    const expectedTokens: Token[] = comparisonOperators.map((op) => ({
-      type: "COMPARISON_OPERATOR",
-      value: `i${op}`,
-      position: input.indexOf(`i${op}`),
-    }))
+    const expectedTokens: Token[] = comparisonOperators
+      .flatMap((op, index) => [
+        {
+          type: "FIELD",
+          value: "field",
+          position: index * 19,
+        },
+        {
+          type: "COMPARISON_OPERATOR",
+          value: `i${op}`,
+          position: index * 19 + 6,
+        },
+        {
+          type: "VALUE",
+          value: "value",
+          position: index * 19 + 10,
+        },
+        {
+          type: "AND",
+          value: "&&",
+          position: index * 19 + 16,
+        },
+      ])
+      .slice(0, -1) as Token[] // get rid of the last AND token
     const expected: Token[] = [...expectedTokens, createEofToken(input)]
 
     const tokens = lexer.tokenize()
     expect(tokens).toEqual(expected)
   })
 
-  it("should not include 'i' in identifier when followed by a comparison operator", () => {
-    const input = "idi i== value"
+  it("should handle case-insensitive comparison", () => {
+    const input = "i i== value"
     const lexer = new Lexer(input)
     const expected: Token[] = [
-      { type: "IDENTIFIER", value: "idi", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "i==", position: 4 },
-      { type: "IDENTIFIER", value: "value", position: 8 },
+      { type: "FIELD", value: "i", position: 0 },
+      { type: "COMPARISON_OPERATOR", value: "i==", position: 2 },
+      { type: "VALUE", value: "value", position: 6 },
+      createEofToken(input),
+    ]
+
+    const tokens = lexer.tokenize()
+    expect(tokens).toEqual(expected)
+  })
+
+  it("should handle field that ends with 'i'", () => {
+    const input = "i == value"
+    const lexer = new Lexer(input)
+    const expected: Token[] = [
+      { type: "FIELD", value: "i", position: 0 },
+      { type: "COMPARISON_OPERATOR", value: "==", position: 2 },
+      { type: "VALUE", value: "value", position: 5 },
       createEofToken(input),
     ]
 
@@ -173,9 +239,9 @@ describe("lexer", () => {
     const lexer = new Lexer(input)
     const expected: Token[] = [
       { type: "NOT", value: "!", position: 0 },
-      { type: "IDENTIFIER", value: "field", position: 1 },
+      { type: "FIELD", value: "field", position: 1 },
       { type: "COMPARISON_OPERATOR", value: "!=", position: 7 },
-      { type: "IDENTIFIER", value: "value", position: 10 },
+      { type: "VALUE", value: "value", position: 10 },
       createEofToken(input),
     ]
 
@@ -189,21 +255,21 @@ describe("lexer", () => {
     expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage("LexerError", "Unterminated string at position 22")
   })
 
-  it("should throw when a reserved character is used in an identifier", () => {
-    const input = "fi&eld value"
+  it("should throw when ambiguous case-insensitive operator is at the start of the query", () => {
+    const input = "i==value"
     const lexer = new Lexer(input)
     expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage(
       "LexerError",
-      "Unexpected character '&' at position 2",
+      "Ambiguous syntax 'i==' at position 0: field is missing or you meant 'i =='",
     )
   })
 
-  it("should throw on unexpected character", () => {
-    const input = "field & value"
+  it("should throw when case-insensitive operator is not preceded by whitespace", () => {
+    const input = "fieldi==value"
     const lexer = new Lexer(input)
     expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage(
       "LexerError",
-      "Unexpected character '&' at position 6",
+      "Ambiguous syntax 'i==' at position 5: case-insensitive operators must be preceded by whitespace",
     )
   })
 })

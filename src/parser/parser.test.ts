@@ -209,15 +209,6 @@ describe("parser", () => {
       )
     })
 
-    it("should throw on missing closing parenthesis", () => {
-      const input = "(title == matrix"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Expected ')' but found '' at position 16",
-      )
-    })
-
     it("should throw on missing field name", () => {
       const input = "== matrix"
       const parser = new Parser(new Lexer(input).tokenize())
@@ -227,10 +218,14 @@ describe("parser", () => {
       )
     })
 
-    it("should throw on invalid operator", () => {
-      const input = "title %% matrix"
+    it("should throw on missing comparison operator", () => {
+      // this is technically equivalent to the first test in this describe block, since 'title' expands to 'title == true'
+      const input = "title matrix"
       const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage("ParserError", "Unexpected token '%%' at position 6")
+      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
+        "ParserError",
+        "Unexpected token 'matrix' at position 6",
+      )
     })
 
     it("should throw on missing value after operator", () => {
@@ -242,12 +237,36 @@ describe("parser", () => {
       )
     })
 
-    it("should throw on invalid token after operator", () => {
+    it("should throw on invalid field name", () => {
+      const input = "&& == matrix"
+      const parser = new Parser(new Lexer(input).tokenize())
+      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
+        "ParserError",
+        "Expected field name but found '&&' at position 0",
+      )
+    })
+
+    it("should throw on invalid comparison operator", () => {
+      const input = "title ! matrix"
+      const parser = new Parser(new Lexer(input).tokenize())
+      expect(() => parser.parse()).toThrowErrorWithNameAndMessage("ParserError", "Unexpected token '!' at position 6")
+    })
+
+    it("should throw on invalid value", () => {
       const input = "title == &&"
       const parser = new Parser(new Lexer(input).tokenize())
       expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
         "ParserError",
         "Expected value but found '&&' at position 9",
+      )
+    })
+
+    it("should throw on missing closing parenthesis", () => {
+      const input = "(title == matrix"
+      const parser = new Parser(new Lexer(input).tokenize())
+      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
+        "ParserError",
+        "Expected ')' but found '' at position 16",
       )
     })
   })

@@ -101,31 +101,22 @@ export class Parser {
    */
   private parseComparison(): ComparisonNode {
     const fieldToken = this.current()
-    if (fieldToken.type !== "IDENTIFIER")
+    if (fieldToken.type !== "FIELD")
       throw new ParserError(
         `Expected field name but found '${this.current().value}' at position ${this.current().position}`,
       )
-
     this.advance()
 
-    // Check if this is a boolean field (no operator follows)
-    if (this.current().type !== "COMPARISON_OPERATOR") {
-      // Boolean field shorthand: field -> field == true
-      return { type: "comparison", field: fieldToken.value, operator: "==", value: "true" }
-    }
-
     const operatorToken = this.current()
+    // if no comparison operator follows, this is a boolean field shorthand: field -> field == true
+    // we use the type guard here instead of checking operatorToken.type so we can narrow the type of operatorToken.value
     if (!isComparisonOperator(operatorToken.value))
-      throw new ParserError(
-        `Expected comparison operator but found '${operatorToken.value}' at position ${this.current().position}`,
-      )
-
+      return { type: "comparison", field: fieldToken.value, operator: "==", value: "true" }
     this.advance()
 
     const valueToken = this.current()
-    if (valueToken.type !== "IDENTIFIER" && valueToken.type !== "QUOTED_VALUE")
+    if (valueToken.type !== "VALUE" && valueToken.type !== "QUOTED_VALUE")
       throw new ParserError(`Expected value but found '${valueToken.value}' at position ${valueToken.position}`)
-
     this.advance()
 
     return { type: "comparison", field: fieldToken.value, operator: operatorToken.value, value: valueToken.value }

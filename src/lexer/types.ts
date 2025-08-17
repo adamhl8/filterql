@@ -1,3 +1,5 @@
+import { LexerError } from "~/lexer/lexer.js"
+
 export const comparisonOperators = [
   "==", // equals
   "!=", // not equals
@@ -9,32 +11,42 @@ export const comparisonOperators = [
   "<=", // less than or equal to
 ] as const
 
-export const comparisonOperatorCharacters = comparisonOperators.map((op) => op[0] ?? "").filter(Boolean)
-
 /**
- * A map of token types to their corresponding reserved characters/strings.
+ * A map of token types to their corresponding characters/strings.
  */
 export const tokenTypeMap = {
-  IDENTIFIER: "", // field names
+  FIELD: undefined,
   COMPARISON_OPERATOR: comparisonOperators,
-  QUOTED_VALUE: '"', // quoted values (non-quoted values are lexed as identifiers and handled by the parser)
+  VALUE: undefined,
+  QUOTED_VALUE: '"',
   LPAREN: "(",
   RPAREN: ")",
   NOT: "!",
   AND: "&&",
   OR: "||",
-  EOF: "", // end of input
+  EOF: undefined, // end of input
 } as const
 
-const tokenCharacters = Object.values(tokenTypeMap)
+const tokens = Object.values(tokenTypeMap)
   .flat()
-  .map((char) => char[0] ?? "")
-  .filter(Boolean)
+  .filter((token) => token !== undefined)
 
 /**
- * An array of reserved characters. An IDENTIFIER can not contain any of these characters.
+ * An array of tokens that terminate a FIELD or VALUE
  */
-export const reservedCharacters = [" ", "\t", "\n", "\r", "\\", ...tokenCharacters]
+const terminators = [" ", "\t", "\n", "\r", ...tokens] as const
+type Terminator = (typeof terminators)[number]
+
+export const isTerminator = (token: string): token is Terminator => {
+  // when we reach the end of the input, the passed in token has a length of 1, so we pad it with a space
+  const paddedToken = token.padEnd(2)
+
+  const firstChar = paddedToken[0]
+  // terminators are always 1 or 2 characters long, this should never throw unless we make a mistake when calling it
+  if (!(firstChar && paddedToken.length === 2))
+    throw new LexerError(`INTERNAL ERROR: provided token ${token} string is not of length 2`)
+  return terminators.includes(firstChar as Terminator) || terminators.includes(paddedToken as Terminator)
+}
 
 type TokenType = keyof typeof tokenTypeMap
 

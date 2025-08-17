@@ -1,7 +1,7 @@
 import type { Entries } from "type-fest"
 
 import type { Token } from "~/lexer/types.js"
-import { comparisonOperatorCharacters, comparisonOperators, reservedCharacters, tokenTypeMap } from "~/lexer/types.js"
+import { comparisonOperators, isTerminator, tokenTypeMap } from "~/lexer/types.js"
 
 const WHITESPACE = /\s/
 
@@ -14,6 +14,7 @@ export class Lexer {
    */
   #position = 0
   private current: string
+  private readonly tokens: Token[] = []
 
   /**
    * Each token type has a corresponding handler function that returns the value for the token or `undefined`.
@@ -22,19 +23,29 @@ export class Lexer {
    * Each handler is responsible for advancing the lexer's position.
    */
   private readonly tokenHandlers = {
-    IDENTIFIER: () => {
-      let identifier = ""
+    FIELD: () => {
+      let field = ""
+      let backtrackCount = 0
 
-      while (this.position < this.input.length && !reservedCharacters.includes(this.current)) {
-        // edge case: don't consume 'i' if it's followed by an operator
-        const next = this.peek()
-        if (this.current === "i" && comparisonOperatorCharacters.includes(next)) break
+      while (this.position < this.input.length && !isTerminator(this.current + this.peekBy(1))) {
+        // don't consume 'i' if it's followed by an operator
+        const next = this.peekBy(2)
+        if (this.current === "i" && comparisonOperators.some((op) => next === op)) break
 
-        identifier += this.current
+        field += this.current
         this.advanceBy(1)
+        backtrackCount--
       }
 
-      if (identifier) return identifier
+      const previousToken = this.tokens.at(-1)
+      // VALUE tokens are *always* preceded by a comparison operator
+      // if this is true, then the field is actually a value
+      if (previousToken && previousToken.type === "COMPARISON_OPERATOR") {
+        this.advanceBy(backtrackCount)
+        return
+      }
+
+      if (field) return field
       return
     },
     COMPARISON_OPERATOR: () => {
@@ -42,8 +53,23 @@ export class Lexer {
 
       // handle case-insensitive operator
       if (this.current === "i") {
-        const next = this.peek()
-        if (comparisonOperatorCharacters.includes(next)) {
+        const next = this.peekBy(2)
+        if (comparisonOperators.some((op) => next === op)) {
+          // We need to handle an ambiguous query like 'i== value'. Is this supposed to be 'i == value' or 'i== value' (missing field)?
+          // To handle this, case-insensitive operators must be preceded by whitespace.
+          const isAtStart = this.position === 0
+          if (isAtStart)
+            throw new LexerError(
+              `Ambiguous syntax 'i${next}' at position ${this.position}: field is missing or you meant 'i ${next}'`,
+            )
+
+          const prevChar = this.peekBy(-1)
+          const precededByWhitespace = WHITESPACE.test(prevChar)
+          if (!precededByWhitespace)
+            throw new LexerError(
+              `Ambiguous syntax 'i${next}' at position ${this.position}: case-insensitive operators must be preceded by whitespace`,
+            )
+
           operator += "i"
           this.advanceBy(1)
         }
@@ -60,6 +86,17 @@ export class Lexer {
       // If we consumed 'i' but found no operator, we need to backtrack
       if (operator === "i") this.advanceBy(-1)
 
+      return
+    },
+    VALUE: () => {
+      let value = ""
+
+      while (this.position < this.input.length && !isTerminator(this.current + this.peekBy(1))) {
+        value += this.current
+        this.advanceBy(1)
+      }
+
+      if (value) return value
       return
     },
     QUOTED_VALUE: () => {
@@ -132,18 +169,16 @@ export class Lexer {
   }
 
   public tokenize(): Token[] {
-    const tokens: Token[] = []
-
     while (this.position < this.input.length) {
       this.skipWhitespace()
       if (this.position >= this.input.length) break
 
       const token = this.nextToken()
-      tokens.push(token)
+      this.tokens.push(token)
     }
 
-    tokens.push({ type: "EOF", value: "", position: this.position })
-    return tokens
+    this.tokens.push({ type: "EOF", value: "", position: this.position })
+    return this.tokens
   }
 
   private nextToken(): Token {
@@ -172,8 +207,14 @@ export class Lexer {
     this.current = this.input[this.position] ?? ""
   }
 
-  private peek(): string {
-    return this.input[this.position + 1] ?? ""
+  private peekBy(count: number): string {
+    if (count < 0) return this.input.slice(this.position + count, this.position)
+    // slice returns from the start index up to but *not* including the end index
+    // e.g. say the input is "bar" and we're at position 1 ("a"), we would want peekBy(1) to return "r". So we want position 2 up to and including 2.
+    // In other words, we want to start at the *next* position, and end at the next position + count. i.e. "bar".slice(2, 3) -> "r"
+    // Note: an out of bounds end index is fine, slice always stops at the end of the string
+    const nextPosition = this.position + 1
+    return this.input.slice(nextPosition, nextPosition + count)
   }
 
   private matchesString(str: string): boolean {
@@ -181,7 +222,7 @@ export class Lexer {
   }
 }
 
-class LexerError extends Error {
+export class LexerError extends Error {
   public constructor(message: string) {
     super(message)
     Object.setPrototypeOf(this, new.target.prototype)

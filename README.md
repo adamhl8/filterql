@@ -188,7 +188,7 @@ Inside a quoted value, double quotes must be escaped:
 title == "A title with \"quotes\""
 ```
 
-Values containing [reserved characters](#syntax-rules) must be quoted:
+Values containing [certain characters](#syntax-rules) must be quoted (when in doubt, wrap your value in double quotes):
 
 ```
 title == "Airplane!"
@@ -299,13 +299,16 @@ title i== "the matrix"
 
 ### Syntax Rules
 
-- Whitespace (spaces, tabs, newlines) is ignored/optional
+- Whitespace (spaces, tabs, newlines) is ignored/optional EXCEPT for the following two cases:
+  - Case-insensitive comparison operators **must** be preceded by whitespace. This is to avoid ambiguous queries such as `ends-in-i==value` (is this `ends-in-i == value` or `ends-in- i== value`?)
+  - Whitespace acts as a terminator for fields and unquoted values
 - Queries are terminated by end of input
-- A field (or unquoted value) **cannot** contain the following characters: whitespace (` `, `\t`, `\n`, `\r`), reserved token characters (`"`, `\`, `(`, `)`, `!`, `&`, `\|`, `=`, `*`, `^`, `$`, `~`, `>`, `<`)
-  - This means that a value must be quoted if it contains any of these characters
-- A field can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
-- A value is either **unquoted** or **quoted**
-  - A value requiring spaces must be enclosed in double quotes: `"The Matrix"`
+- Fields and values are terminated by the following characters/strings: whitespace (` `, `\t`, `\n`, `\r`) and token characters (`"`, `(`, `)`, `!`, `&&`, `\|\|`, `==`, `!=`, `*=`, `^=`, `$=`, `~=`, `>=`, `<=`)
+  - Values must be quoted if they contain any of these characters
+  - Note: Fields and unquoted values are lexed in exactly the same way. However, they can be differentiated because values are *always* preceded by a comparison operator.
+- Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
+- Values are either **unquoted** or **quoted**
+  - Values requiring spaces must be enclosed in double quotes: `"The Matrix"`
   - Double quotes (`"`) are the only valid quotes
   - Double quotes inside quoted values are escaped with a backslash (`\"`): `"a value with \"quotes\""`
     - This is the only supported escape sequence
