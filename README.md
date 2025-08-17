@@ -303,7 +303,7 @@ title i== "the matrix"
   - Case-insensitive comparison operators **must** be preceded by whitespace. This is to avoid ambiguous queries such as `ends-in-i==value` (is this `ends-in-i == value` or `ends-in- i== value`?)
   - Whitespace acts as a terminator for fields and unquoted values
 - Queries are terminated by end of input
-- Fields and values are terminated by the following characters/strings: whitespace (` `, `\t`, `\n`, `\r`) and token characters (`"`, `(`, `)`, `!`, `&&`, `\|\|`, `==`, `!=`, `*=`, `^=`, `$=`, `~=`, `>=`, `<=`)
+- Fields and values are terminated by the following characters/strings: whitespace (` `, `\t`, `\n`, `\r`) and token characters (`"`, `(`, `)`, `!`, `&&`, `||`, `==`, `!=`, `*=`, `^=`, `$=`, `~=`, `>=`, `<=`)
   - Values must be quoted if they contain any of these characters
   - Note: Fields and unquoted values are lexed in exactly the same way. However, they can be differentiated because values are *always* preceded by a comparison operator.
 - Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
