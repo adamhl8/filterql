@@ -1,39 +1,43 @@
-import { Evaluator } from "~/evaluator/evaluator.js"
-import type { Data, EvaluatorOptions, Schema } from "~/evaluator/types.js"
+import { FilterEvaluator } from "~/filter-evaluator/filter-evaluator.js"
 import { Lexer } from "~/lexer/lexer.js"
+import { OperationEvaluator } from "~/operation-evaluator/operation-evaluator.js"
+import type { OperationMap } from "~/operation-evaluator/types.js"
 import { Parser } from "~/parser/parser.js"
-import type { ASTNode } from "~/parser/types.js"
+import type { DataObject, FilterQLOptions, RequiredFilterQLOptions, Schema } from "~/types.js"
 
-export interface FilterQLOptions extends EvaluatorOptions {}
+const DEFAULT_OPTIONS: RequiredFilterQLOptions = { allowUnknownFields: false }
 
-const DEFAULT_OPTIONS: FilterQLOptions = { allowUnknownFields: false }
+interface FilterQLArguments {
+  schema: Schema
+  options?: FilterQLOptions
+  customOperations?: OperationMap
+}
 
 export class FilterQL {
-  private readonly options: FilterQLOptions
-  private readonly evaluator: Evaluator
+  private readonly options: RequiredFilterQLOptions
+  private readonly lexer: Lexer
+  private readonly parser: Parser
+  private readonly filterEvaluator: FilterEvaluator
+  private readonly operationEvaluator: OperationEvaluator
 
-  public constructor(schema: Schema, options?: FilterQLOptions) {
+  public constructor({ schema, options, customOperations }: FilterQLArguments) {
     this.options = { ...DEFAULT_OPTIONS, ...options }
-    this.evaluator = new Evaluator(schema, this.options)
+    this.lexer = new Lexer()
+    this.parser = new Parser()
+    this.filterEvaluator = new FilterEvaluator(schema, this.options)
+    this.operationEvaluator = new OperationEvaluator(schema, this.options, customOperations)
   }
 
   /**
-   * Parse a query string into an AST
+   * Filter and apply operations to a data array with the given query
    */
-  private parseQuery(query: string): ASTNode {
-    const lexer = new Lexer(query)
-    const tokens = lexer.tokenize()
-    const parser = new Parser(tokens)
-    return parser.parse()
-  }
-
-  /**
-   * Filter an array of objects based on a query
-   */
-  public filter<T extends Data>(data: T[], query: string): T[] {
+  public filter<T extends DataObject>(data: T[], query: string): T[] {
     if (!query.trim()) return data
 
-    const ast = this.parseQuery(query)
-    return data.filter((item) => this.evaluator.evaluate(ast, item))
+    const ast = this.parser.parse(this.lexer.tokenize(query))
+
+    const filteredData = this.filterEvaluator.filter(data, ast.filter)
+
+    return this.operationEvaluator.apply(filteredData, ast.operations)
   }
 }

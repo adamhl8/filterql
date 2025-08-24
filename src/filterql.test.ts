@@ -1,53 +1,51 @@
 import { describe, expect, it } from "bun:test"
 
-import type { Schema } from "~/evaluator/types.js"
-import { FilterQL } from "~/index.js"
-
-const testSchema: Schema = {
-  title: { type: "string", alias: "t" },
-  year: { type: "number", alias: "y" },
-  monitored: { type: "boolean", alias: "m" },
-  rating: { type: "number" },
-  genre: { type: "string" },
-  status: { type: "string" },
-}
-
-const testData = [
-  { title: "The Matrix", year: 1999, monitored: true, rating: 8.7, genre: "Action", status: "Available" },
-  { title: "The Matrix Reloaded", year: 2003, monitored: false, rating: 7.2, genre: "Action", status: "Missing" },
-  { title: "Inception", year: 2010, monitored: true, rating: 8.8, genre: "Thriller", status: "Available" },
-  { title: "Interstellar", year: 2014, monitored: true, rating: 8.6, genre: "Drama", status: "Downloaded" },
-  { title: "The Dark Knight", year: 2008, monitored: false, rating: 9.0, genre: "Action", status: "Available" },
-]
+import { FilterQL } from "~/filterql.js"
+import type { OperationMap } from "~/operation-evaluator/types.js"
+import { testData, testSchema } from "~/test-utils.js"
 
 describe("FilterQL", () => {
   describe("filter", () => {
     it("should return the data as-is when the query is empty", () => {
-      const filterql = new FilterQL(testSchema)
+      const filterql = new FilterQL({ schema: testSchema })
       const result = filterql.filter(testData, "")
 
-      expect(result).toEqual(testData)
+      expect(result).toBe(testData) // using toBe instead of toEqual because the object reference should be the same
+    })
+  })
+
+  describe("usage", () => {
+    it("should filter and sort movies", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      const result = filterql.filter(testData, "rating >= 8.5 | SORT year desc")
+
+      expect(result).toHaveLength(4)
+      expect(result.map((r) => ({ title: r.title, year: r.year, rating: r.rating }))).toEqual([
+        { title: "Interstellar", year: 2014, rating: 8.6 },
+        { title: "Inception", year: 2010, rating: 8.8 },
+        { title: "The Dark Knight", year: 2008, rating: 9.0 },
+        { title: "The Matrix", year: 1999, rating: 8.7 },
+      ])
     })
 
-    it("should filter data based on the query", () => {
-      const filterql = new FilterQL(testSchema)
-      const complexQuery = `
-        (t i*= "tion" || t ^= "Inter" || genre ~= "Action") &&
-        (y >= 2000 && y <= 2015) &&
-        (rating >= 7.0 || genre i== "DRAMA") &&
-        (m || !m) &&
-        status != "" &&
-        !title $= "Missing Title" &&
-        (title != "Excluded")
-      `
-      const result = filterql.filter(testData, complexQuery)
-      expect(result).toHaveLength(4)
-      expect(result.map((r) => r.title)).toEqual([
-        "The Matrix Reloaded",
-        "Inception",
-        "Interstellar",
-        "The Dark Knight",
-      ])
+    it("should handle match-all syntax with operations", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      const result = filterql.filter(testData, "* | SORT rating desc | LIMIT 3")
+
+      expect(result).toHaveLength(3)
+      expect(result.map((r) => r.title)).toEqual(["The Dark Knight", "Inception", "The Matrix"])
+    })
+
+    it("should handle custom operation", () => {
+      const customOperations: OperationMap = {
+        DOUBLE: (data) => [...data, ...data],
+      }
+
+      const filterql = new FilterQL({ schema: testSchema, customOperations })
+      const result = filterql.filter(testData, "t == Inception | DOUBLE")
+
+      expect(result).toHaveLength(2)
+      expect(result.every((r) => r.title === "Inception")).toBeTrue()
     })
   })
 })

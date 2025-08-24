@@ -4,7 +4,9 @@
 
 A tiny query language for filtering structured data 🚀
 
-[![Typing SVG](<https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=14&pause=7500&width=600&height=25&lines=(genre+%3D%3D+Action+%7C%7C+genre+%3D%3D+Comedy)+%26%26+year+%3E%3D+2000+%26%26+rating+%3E%3D+8.5>)](https://git.io/typing-svg)
+<!-- https://readme-typing-svg.demolab.com/demo/?font=JetBrains+Mono&size=16&duration=3000&pause=7500&vCenter=true&width=690&height=25&lines=(genre+%3D%3D+Action+%7C%7C+genre+%3D%3D+Comedy)+%26%26+rating+%3E%3D+8.5+%7C+SORT+rating+desc -->
+
+[![Typing SVG](<https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=16&duration=3000&pause=7500&vCenter=true&width=690&height=25&lines=(genre+%3D%3D+Action+%7C%7C+genre+%3D%3D+Comedy)+%26%26+rating+%3E%3D+8.5+%7C+SORT+rating+desc>)](https://git.io/typing-svg)
 
 ---
 
@@ -22,14 +24,21 @@ There are two main parts of this repository: the TypeScript library and the [Fil
     - [Boolean Fields](#boolean-fields)
     - [Quoted Values](#quoted-values)
     - [Empty Value Checks](#empty-value-checks)
-  - [Schemas](#schemas)
-  - [FilterQL Options](#filterql-options)
+    - [Match-All](#match-all)
+  - [Operations](#operations)
+    - [Built-in Operations](#built-in-operations)
+  - [`FilterQL` Class](#filterql-class)
+    - [Schemas](#schemas)
+    - [Options](#options)
+    - [Custom Operations](#custom-operations)
   - [API Reference](#api-reference)
-    - [`FilterQL` class](#filterql-class)
+    - [`FilterQL`](#filterql)
 - [Language Specification](#language-specification)
   - [Grammar](#grammar)
   - [Comparison Operators](#comparison-operators-1)
   - [Logical Operators](#logical-operators-1)
+  - [Match-All](#match-all-1)
+  - [Operations](#operations-1)
   - [Syntax Rules](#syntax-rules)
   - [Implementation](#implementation)
 
@@ -60,7 +69,7 @@ const schema = {
   genre: { type: "string" },
 }
 
-const filterql = new FilterQL(schema)
+const filterql = new FilterQL({ schema })
 
 const movies = [
   { title: "The Matrix", year: 1999, monitored: true, rating: 8.7, genre: "Action" },
@@ -73,6 +82,9 @@ const actionMovies = filterql.filter(movies, "genre == Action")
 
 // Field aliases and multiple comparisons
 const recentGoodMovies = filterql.filter(movies, "y >= 2008 && rating >= 8.5")
+
+// Sort the filtered data by using the built-in SORT operation
+const recentGoodMovies = filterql.filter(movies, "year >= 2008 | SORT rating desc")
 
 // Filter using boolean shorthand
 const monitoredMovies = filterql.filter(movies, "monitored")
@@ -98,7 +110,7 @@ const schema = {
   genre: { type: "string" },
 }
 
-const filterql = new FilterQL(schema)
+const filterql = new FilterQL({ schema })
 const filteredMovies = filterql.filter(data, query)
 
 console.log(filteredMovies)
@@ -130,8 +142,6 @@ Combine multiple comparisons using logical operators for more complex queries:
 title == Interstellar && year == 2014
 ```
 
-Whitespace is ignored/optional: `title == Interstellar` is equivalent to `title==Interstellar`.
-
 #### Logical Operators
 
 The following logical operators can be used in queries:
@@ -141,7 +151,10 @@ The following logical operators can be used in queries:
 - `&&` (and)
 - `||` (or)
 
-Note that these operators are listed in order of precedence. This is important because many queries will likely require parentheses to do what you want. For example:
+> [!TIP]
+> Note that these operators are listed in order of precedence. This is important because many queries will likely require parentheses to do what you want.
+
+For example:
 
 `genre == Action || genre == Thriller && rating >= 8.5` means "genre must be Action or, genre must be Thriller and rating must be at least 8.5." This probably isn't what you want.
 
@@ -160,7 +173,8 @@ The following comparison operators can be used in comparisons:
 - `>=` (greater than or equal)
 - `<=` (less than or equal)
 
-Comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`:
+> [!TIP]
+> Comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`.
 
 ```
 title i== interstellar
@@ -168,7 +182,7 @@ title i== interstellar
 
 #### Boolean Fields
 
-For boolean fields, you can use the field name without any comparison to check for truthiness:
+For boolean fields, you can use the field name without any comparison to check for `true`:
 
 `downloaded` is equivalent to `downloaded == true`
 
@@ -188,12 +202,6 @@ Inside a quoted value, double quotes must be escaped:
 title == "A title with \"quotes\""
 ```
 
-Values containing [certain characters](#syntax-rules) must be quoted (when in doubt, wrap your value in double quotes):
-
-```
-title == "Airplane!"
-```
-
 #### Empty Value Checks
 
 Sometimes the data you're filtering might have empty values (`""`, `undefined`, `null`). You can filter for empty values by comparing to an empty string:
@@ -210,11 +218,58 @@ Get all entries that have a rating:
 rating != ""
 ```
 
-### Schemas
+#### Match-All
+
+If you want to get _all_ of the entries, use `*` (the data is not filtered):
+
+```
+*
+```
+
+This is mainly useful when you don't want to filter the data but want to apply operations to it.
+
+```
+* | SORT rating desc
+```
+
+### Operations
+
+After filtering, you can apply operations to transform the data: `<filter> | <operation> [...args]`
+
+```
+year >= 2000 | SORT rating desc | LIMIT 10
+```
+
+- Operations are applied in the order they are specified.
+- The same operation can be applied multiple times.
+
+#### Built-in Operations
+
+There are currently two built-in operations:
+
+- `SORT`: Sorts the data by the specified field.
+  - `SORT <field> [direction]`
+  - `direction` can be `asc` or `desc` (default: `asc`).
+- `LIMIT`: Limits the number of entries returned.
+  - `LIMIT <number>`
+
+If you have any suggestions for other operations, please let me know by opening an issue!
+
+> [!TIP]
+> You can also define **[custom operations](#custom-operations)**.
+
+### `FilterQL` Class
+
+#### Schemas
 
 The schema given to the `FilterQL` constructor determines what fields are allowed in queries.
 
-Each field has a type and an (optional) alias.
+> [!IMPORTANT]
+> FilterQL does not care about extra properties/keys in the _data_.
+>
+> In other words, a schema's keys can be a subset of the data's keys.
+
+Each field has a `type` and an (optional) `alias`.
 
 ```ts
 const schema = {
@@ -222,6 +277,8 @@ const schema = {
   year: { type: "number", alias: "y" },
   monitored: { type: "boolean" },
 }
+
+const filterql = new FilterQL({ schema })
 ```
 
 Field types determine validation behavior:
@@ -230,30 +287,85 @@ Field types determine validation behavior:
 - `number`: The value must be coercible to a number
 - `boolean`: The value must be `true` or `false`
 
-### FilterQL Options
+> [!NOTE]
+> When a comparison value can't be coerced to the field's type, an error is thrown. For example, a query like `year = foo` will cause an error to be thrown.
+
+#### Options
 
 ```ts
-const filterql = new FilterQL(schema, {
-  allowUnknownFields: false,
+const filterql = new FilterQL({
+  schema,
+  options: {
+    allowUnknownFields: false,
+  },
 })
 ```
 
 The `FilterQL` constructor accepts an optional `options` object with the following properties:
 
-- `allowUnknownFields` (default: `false`): By default, an error is thrown if a query contains a field that's not in the schema. If `true`, unknown fields are allowed.
+`allowUnknownFields` (default: `false`): By default, an error is thrown if a query contains a field that's not in the schema. If `true`, unknown fields are allowed.
 
-### API Reference
+- This could be useful in situations where the schema can't be determined ahead of time. i.e. the keys of the data are unknown or may change.
 
-#### `FilterQL` class
+#### Custom Operations
+
+> [!TIP]
+> Take a look at the built-in operations in [src/operation-evaluator/operations.ts](./src/operation-evaluator/operations.ts) to see how they're implemented.
+
+Let's say you want to create a custom operation called `ROUND` that takes a field name as the first argument and rounds the number value of that field.
+
+A query might look something like `year >= 2000 | SORT rating desc | ROUND rating`.
+
+You can define custom operations by providing a `customOperations` object to the `FilterQL` constructor.
+
+- The keys are the names of the custom operations and **must** be all uppercase.
+- The values are functions that return the transformed data.
 
 ```ts
-class FilterQL {
-  constructor(schema: Schema, options?: FilterQLOptions)
-  filter<T extends Record<string | number | symbol, unknown>>(data: T[], query: string): T[]
+import type { OperationMap } from "filterql"
+
+const customOperations: OperationMap = {
+  ROUND: (data, args, { resolveField }) => {
+    const field = resolveField(args[0]) // the first argument might be the alias of the field
+    if (!field) throw new Error(`Unknown field '${args[0]}' for operation 'ROUND'`)
+    return data.map((item) => Math.round(item[field]))
+  },
+}
+
+const filterql = new FilterQL({ schema: mySchema, customOperations })
+```
+
+Three arguments are provided to a given operation function:
+
+- `data`: The data after its been filtered (and transformed by any previous operations).
+- `args`: A string array containing any arguments passed to the operation.
+- `operationHelpers`: An object containing the FilterQL instance `schema`, `options`, and a `resolveField` function.
+  - The `resolveField` function takes a string and returns the full field name if it exists in the schema. Use it to support field aliases in operations. e.g. `"t" -> "title"` or `"title" -> "title"` (full field name resolves to itself).
+
+Built-in operations can be overridden by providing a custom operation with the same name:
+
+```ts
+const customOperations: OperationMap = {
+  SORT: (data, args, { resolveField }) => {
+    // your custom SORT implementation
+  },
 }
 ```
 
-The `Lexer`, `Parser`, and `Evaluator` classes are also exported if you want to do something custom.
+### API Reference
+
+#### `FilterQL`
+
+```ts
+class FilterQL {
+  constructor({
+    schema: Schema,
+    options?: FilterQLOptions,
+    customOperations?: OperationMap
+  })
+  filter<T extends Record<string | number | symbol, unknown>>(data: T[], query: string): T[]
+}
+```
 
 ## Language Specification
 
@@ -262,11 +374,13 @@ The `Lexer`, `Parser`, and `Evaluator` classes are also exported if you want to 
 FilterQL follows this grammar:
 
 ```
-query := expr
+query := filter ( "|" operation )*
+filter := expr
+operation := operation_name arg*
 expr := and_expr ( "||" and_expr )*
 and_expr := term ( "&&" term )*
 term := "!" term | "(" expr ")" | comparison
-comparison := field operator value | field
+comparison := field operator value | field | "*"
 ```
 
 ### Comparison Operators
@@ -297,23 +411,41 @@ title i== "the matrix"
 | `&&`     | AND                    | `monitored && year >= 2000`           | Left associative                             |
 | `\|\|`   | OR                     | `genre == Action \|\| genre == Drama` | Left associative                             |
 
+### Match-All
+
+The `*` character can be used in place of a comparison. When evaluated, it _always_ matches.
+
+`* | SORT year`: Matches all entries and then sorts by `year`.
+
+`title == Matrix || * | SORT year`: This is effectively the same as the above query because the `|| *` matches all entries.
+
+### Operations
+
+Operations can be chained after the filter expression using the pipe operator (`|`). Each operation consists of an uppercase operation name followed by zero or more arguments:
+
+```
+title == "Matrix" | SORT year
+rating >= 8.5 | SORT rating desc | LIMIT 10
+```
+
 ### Syntax Rules
 
-- Whitespace (spaces, tabs, newlines) is ignored/optional EXCEPT for the following two cases:
-  - Case-insensitive comparison operators **must** be preceded by whitespace. This is to avoid ambiguous queries such as `ends-in-i==value` (is this `ends-in-i == value` or `ends-in- i== value`?)
-  - Whitespace acts as a terminator for fields and unquoted values
+- Tokens/words in queries are terminated by whitespace (` `, `\t`, `\n`, `\r`)
+  - e.g. a query like `title==Matrix` would be tokenized as _one_ token with a value of `"title==Matrix"`
 - Queries are terminated by end of input
-- Fields and values are terminated by the following characters/strings: whitespace (` `, `\t`, `\n`, `\r`) and token characters (`"`, `(`, `)`, `!`, `&&`, `||`, `==`, `!=`, `*=`, `^=`, `$=`, `~=`, `>=`, `<=`)
-  - Values must be quoted if they contain any of these characters
-  - Note: Fields and unquoted values are lexed in exactly the same way. However, they can be differentiated because values are *always* preceded by a comparison operator.
 - Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
+- Fields and values can have certain characters "attached" to them that must be tokenized appropriately:
+  - Fields can have a leading `(` or `!` (or both). They can also have a trailing `)`. e.g. `!(monitored)` would be tokenized as four tokens: `["!", "(", "monitored", ")"]`
+  - Values can have a trailing `)`. e.g. `(title == Matrix)` would be tokenized as five tokens: `["(", "title", "==", "Matrix", ")"]`
 - Values are either **unquoted** or **quoted**
-  - Values requiring spaces must be enclosed in double quotes: `"The Matrix"`
+  - Values requiring whitespace must be enclosed in double quotes: `"The Matrix"`
   - Double quotes (`"`) are the only valid quotes
   - Double quotes inside quoted values are escaped with a backslash (`\"`): `"a value with \"quotes\""`
     - This is the only supported escape sequence
   - Empty quoted values are valid: `""`
+- Values are _always_ preceded by a comparison operator, which is how they can be differentiated from fields
+- Operation names must be all uppercase
 
 ### Implementation
 
-This repository serves as a reference implementation for the language. See [evaluator.ts](./src/evaluator/evaluator.ts) for implementation details.
+This repository serves as a reference implementation for the language. See the source code for implementation details.

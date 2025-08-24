@@ -5,269 +5,459 @@ import { Parser } from "~/parser/parser.js"
 import type { ASTNode } from "~/parser/types.js"
 
 describe("parser", () => {
-  it("should parse comparison", () => {
-    const input = "title == matrix"
-    const parser = new Parser(new Lexer(input).tokenize())
+  describe("queries", () => {
+    it("should parse comparison", () => {
+      const query = "title == matrix"
 
-    const expected: ASTNode = {
-      type: "comparison",
-      field: "title",
-      operator: "==",
-      value: "matrix",
-    }
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
+            type: "comparison",
+            field: "title",
+            operator: "==",
+            value: "matrix",
+          },
+        },
+        operations: [],
+      }
 
-    const result = parser.parse()
-    expect(result).toEqual(expected)
-  })
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
 
-  it("should parse field shorthand", () => {
-    const input = "available"
-    const parser = new Parser(new Lexer(input).tokenize())
+    it("should parse field shorthand", () => {
+      const query = "available"
 
-    const expected: ASTNode = {
-      type: "comparison",
-      field: "available",
-      operator: "==",
-      value: "true",
-    }
-
-    const result = parser.parse()
-    expect(result).toEqual(expected)
-  })
-
-  it("should parse complex expression", () => {
-    const input = '!available && (title i*= "matrix" || !available) && year >= 2000'
-    const parser = new Parser(new Lexer(input).tokenize())
-
-    const expected: ASTNode = {
-      type: "and",
-      left: {
-        type: "and",
-        left: {
-          type: "not",
-          operand: {
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
             type: "comparison",
             field: "available",
             operator: "==",
             value: "true",
           },
         },
-        right: {
-          type: "or",
-          left: {
-            type: "comparison",
-            field: "title",
-            operator: "i*=",
-            value: "matrix",
-          },
-          right: {
-            type: "not",
-            operand: {
+        operations: [],
+      }
+
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
+
+    it("should parse complex expression", () => {
+      const query = '!available && (title i*= "matrix" || !available) && year >= 2000'
+
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
+            type: "and",
+            left: {
+              type: "and",
+              left: {
+                type: "not",
+                operand: {
+                  type: "comparison",
+                  field: "available",
+                  operator: "==",
+                  value: "true",
+                },
+              },
+              right: {
+                type: "or",
+                left: {
+                  type: "comparison",
+                  field: "title",
+                  operator: "i*=",
+                  value: "matrix",
+                },
+                right: {
+                  type: "not",
+                  operand: {
+                    type: "comparison",
+                    field: "available",
+                    operator: "==",
+                    value: "true",
+                  },
+                },
+              },
+            },
+            right: {
               type: "comparison",
-              field: "available",
-              operator: "==",
-              value: "true",
+              field: "year",
+              operator: ">=",
+              value: "2000",
             },
           },
         },
-      },
-      right: {
-        type: "comparison",
-        field: "year",
-        operator: ">=",
-        value: "2000",
-      },
-    }
+        operations: [],
+      }
 
-    const result = parser.parse()
-    expect(result).toEqual(expected)
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
+
+    describe("logical operations", () => {
+      it("should parse parentheses", () => {
+        const query = "(title == matrix)"
+
+        const expected: ASTNode = {
+          type: "query",
+          filter: {
+            type: "filter",
+            expression: {
+              type: "comparison",
+              field: "title",
+              operator: "==",
+              value: "matrix",
+            },
+          },
+          operations: [],
+        }
+
+        const result = new Parser().parse(new Lexer().tokenize(query))
+        expect(result).toEqual(expected)
+      })
+
+      it("should parse NOT expression", () => {
+        const query = "!available"
+
+        const expected: ASTNode = {
+          type: "query",
+          filter: {
+            type: "filter",
+            expression: {
+              type: "not",
+              operand: {
+                type: "comparison",
+                field: "available",
+                operator: "==",
+                value: "true",
+              },
+            },
+          },
+          operations: [],
+        }
+
+        const result = new Parser().parse(new Lexer().tokenize(query))
+        expect(result).toEqual(expected)
+      })
+
+      it("should parse AND expression", () => {
+        const query = "title == matrix && other != test"
+
+        const expected: ASTNode = {
+          type: "query",
+          filter: {
+            type: "filter",
+            expression: {
+              type: "and",
+              left: {
+                type: "comparison",
+                field: "title",
+                operator: "==",
+                value: "matrix",
+              },
+              right: {
+                type: "comparison",
+                field: "other",
+                operator: "!=",
+                value: "test",
+              },
+            },
+          },
+          operations: [],
+        }
+
+        const result = new Parser().parse(new Lexer().tokenize(query))
+        expect(result).toEqual(expected)
+      })
+
+      it("should parse OR expression", () => {
+        const query = "title == matrix || other != test"
+
+        const expected: ASTNode = {
+          type: "query",
+          filter: {
+            type: "filter",
+            expression: {
+              type: "or",
+              left: {
+                type: "comparison",
+                field: "title",
+                operator: "==",
+                value: "matrix",
+              },
+              right: {
+                type: "comparison",
+                field: "other",
+                operator: "!=",
+                value: "test",
+              },
+            },
+          },
+          operations: [],
+        }
+
+        const result = new Parser().parse(new Lexer().tokenize(query))
+        expect(result).toEqual(expected)
+      })
+
+      it("should handle operator precedence", () => {
+        const query = "title == matrix || other == test && year == 2000"
+
+        const expected: ASTNode = {
+          type: "query",
+          filter: {
+            type: "filter",
+            expression: {
+              type: "or",
+              left: {
+                type: "comparison",
+                field: "title",
+                operator: "==",
+                value: "matrix",
+              },
+              right: {
+                type: "and",
+                left: {
+                  type: "comparison",
+                  field: "other",
+                  operator: "==",
+                  value: "test",
+                },
+                right: {
+                  type: "comparison",
+                  field: "year",
+                  operator: "==",
+                  value: "2000",
+                },
+              },
+            },
+          },
+          operations: [],
+        }
+
+        const result = new Parser().parse(new Lexer().tokenize(query))
+        expect(result).toEqual(expected)
+      })
+    })
+
+    it("should parse match-all", () => {
+      const query = "*"
+
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
+            type: "match_all",
+          },
+        },
+        operations: [],
+      }
+
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
   })
 
-  describe("logical operations", () => {
-    it("should parse parentheses", () => {
-      const input = "(title == matrix)"
-      const parser = new Parser(new Lexer(input).tokenize())
+  describe("operations", () => {
+    it("should parse single operation", () => {
+      const query = "title == matrix | sort year desc"
 
       const expected: ASTNode = {
-        type: "comparison",
-        field: "title",
-        operator: "==",
-        value: "matrix",
-      }
-
-      const result = parser.parse()
-      expect(result).toEqual(expected)
-    })
-
-    it("should parse NOT expression", () => {
-      const input = "!available"
-      const parser = new Parser(new Lexer(input).tokenize())
-
-      const expected: ASTNode = {
-        type: "not",
-        operand: {
-          type: "comparison",
-          field: "available",
-          operator: "==",
-          value: "true",
-        },
-      }
-
-      const result = parser.parse()
-      expect(result).toEqual(expected)
-    })
-
-    it("should parse AND expression", () => {
-      const input = "title == matrix && other != test"
-      const parser = new Parser(new Lexer(input).tokenize())
-
-      const expected: ASTNode = {
-        type: "and",
-        left: {
-          type: "comparison",
-          field: "title",
-          operator: "==",
-          value: "matrix",
-        },
-        right: {
-          type: "comparison",
-          field: "other",
-          operator: "!=",
-          value: "test",
-        },
-      }
-
-      const result = parser.parse()
-      expect(result).toEqual(expected)
-    })
-
-    it("should parse OR expression", () => {
-      const input = "title == matrix || other != test"
-      const parser = new Parser(new Lexer(input).tokenize())
-
-      const expected: ASTNode = {
-        type: "or",
-        left: {
-          type: "comparison",
-          field: "title",
-          operator: "==",
-          value: "matrix",
-        },
-        right: {
-          type: "comparison",
-          field: "other",
-          operator: "!=",
-          value: "test",
-        },
-      }
-
-      const result = parser.parse()
-      expect(result).toEqual(expected)
-    })
-
-    it("should handle operator precedence", () => {
-      const input = "title == matrix || other == test && year == 2000"
-      const parser = new Parser(new Lexer(input).tokenize())
-
-      const expected: ASTNode = {
-        type: "or",
-        left: {
-          type: "comparison",
-          field: "title",
-          operator: "==",
-          value: "matrix",
-        },
-        right: {
-          type: "and",
-          left: {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
             type: "comparison",
-            field: "other",
+            field: "title",
             operator: "==",
-            value: "test",
-          },
-          right: {
-            type: "comparison",
-            field: "year",
-            operator: "==",
-            value: "2000",
+            value: "matrix",
           },
         },
+        operations: [
+          {
+            type: "operation",
+            name: "sort",
+            args: ["year", "desc"],
+          },
+        ],
       }
 
-      const result = parser.parse()
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
+
+    it("should parse multiple operations", () => {
+      const query = "title == matrix | sort year desc | limit 10"
+
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
+            type: "comparison",
+            field: "title",
+            operator: "==",
+            value: "matrix",
+          },
+        },
+        operations: [
+          {
+            type: "operation",
+            name: "sort",
+            args: ["year", "desc"],
+          },
+          {
+            type: "operation",
+            name: "limit",
+            args: ["10"],
+          },
+        ],
+      }
+
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
+
+    it("should parse operation with no arguments", () => {
+      const query = "title == matrix | sort"
+
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
+            type: "comparison",
+            field: "title",
+            operator: "==",
+            value: "matrix",
+          },
+        },
+        operations: [
+          {
+            type: "operation",
+            name: "sort",
+            args: [],
+          },
+        ],
+      }
+
+      const result = new Parser().parse(new Lexer().tokenize(query))
       expect(result).toEqual(expected)
     })
   })
 
   describe("error handling", () => {
-    it("should throw on unexpected token after complete expression", () => {
-      const input = "title == matrix extra"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Unexpected token 'extra' at position 16",
-      )
+    describe("filter errors", () => {
+      it("should throw on unexpected token after complete expression", () => {
+        const query = "title == matrix extra"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Unexpected token 'extra' at position 16",
+        )
+      })
+
+      it("should throw on missing field name", () => {
+        const query = "== matrix"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected field name but found '==' at position 0",
+        )
+      })
+
+      it("should throw on missing comparison operator", () => {
+        // this is technically equivalent to the first test in this describe block, since 'title' expands to 'title == true'
+        const query = "title matrix"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Unexpected token 'matrix' at position 6",
+        )
+      })
+
+      it("should throw on missing value after operator", () => {
+        const query = "title =="
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected value but found '' at position 8",
+        )
+      })
+
+      it("should throw on invalid field name", () => {
+        const query = "&& == matrix"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected field name but found '&&' at position 0",
+        )
+      })
+
+      it("should throw on invalid comparison operator", () => {
+        const query = "title ! matrix"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Unexpected token '!' at position 6",
+        )
+      })
+
+      it("should throw on invalid value", () => {
+        const query = "title == &&"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected value but found '&&' at position 9",
+        )
+      })
+
+      it("should throw on missing closing parenthesis", () => {
+        const query = "(title == matrix"
+
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected ')' but found '' at position 16",
+        )
+      })
     })
 
-    it("should throw on missing field name", () => {
-      const input = "== matrix"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Expected field name but found '==' at position 0",
-      )
-    })
+    describe("operation errors", () => {
+      it("should throw on empty operation", () => {
+        const query = "title == matrix |"
 
-    it("should throw on missing comparison operator", () => {
-      // this is technically equivalent to the first test in this describe block, since 'title' expands to 'title == true'
-      const input = "title matrix"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Unexpected token 'matrix' at position 6",
-      )
-    })
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected operation name but found '' at position 17",
+        )
+      })
 
-    it("should throw on missing value after operator", () => {
-      const input = "title =="
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Expected value but found '' at position 8",
-      )
-    })
+      it("should throw on empty operation followed by valid operation", () => {
+        const query = "title == matrix | | SORT year"
 
-    it("should throw on invalid field name", () => {
-      const input = "&& == matrix"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Expected field name but found '&&' at position 0",
-      )
-    })
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected operation name but found '|' at position 18",
+        )
+      })
 
-    it("should throw on invalid comparison operator", () => {
-      const input = "title ! matrix"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage("ParserError", "Unexpected token '!' at position 6")
-    })
+      it("should throw on operation without filter", () => {
+        const query = "| SORT year"
 
-    it("should throw on invalid value", () => {
-      const input = "title == &&"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Expected value but found '&&' at position 9",
-      )
-    })
-
-    it("should throw on missing closing parenthesis", () => {
-      const input = "(title == matrix"
-      const parser = new Parser(new Lexer(input).tokenize())
-      expect(() => parser.parse()).toThrowErrorWithNameAndMessage(
-        "ParserError",
-        "Expected ')' but found '' at position 16",
-      )
+        expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Expected field name but found '|' at position 0",
+        )
+      })
     })
   })
 })

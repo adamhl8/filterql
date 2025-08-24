@@ -1,6 +1,6 @@
 {
   "name": "filterql",
-  "version": "1.3.1",
+  "version": "2.0.1",
   "type": "module",
   "description": "A tiny query language for filtering structured data",
   "repository": {
@@ -27,7 +27,8 @@
   "keywords": ["filterql", "typescript", "query", "language", "data", "filter", "filtering"],
   "scripts": {
     "bundle": "rm -rf ./dist && bun lint && tsc -p tsconfig.build.json && tsc-alias",
-    "lint": "markdown-toc -i --bullets '-' ./README.md && tsc --noEmit && biome check --write && bun test",
+    "knip": "knip-bun",
+    "lint": "markdown-toc -i --bullets '-' ./README.md && tsc --noEmit && biome check --write && bun knip && bun test",
     "prepare": "find .githooks -type f -exec ln -srf {} .git/hooks/ \\; || true",
     "prepublishOnly": "bun bundle"
   },
@@ -35,9 +36,10 @@
     "@adamhl8/configs": "^0.11.1",
     "@biomejs/biome": "^2.2.0",
     "@types/bun": "^1.2.20",
+    "@types/node": "^24.3.0",
+    "knip": "^5.63.0",
     "markdown-toc": "^1.2.0",
     "tsc-alias": "^1.8.16",
-    "type-fest": "^4.41.0",
     "typescript": "^5.9.2"
   }
 }

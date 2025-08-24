@@ -3,11 +3,26 @@ import { comparisonOperators } from "~/lexer/types.js"
 export type BaseComparisonOperator = (typeof comparisonOperators)[number]
 /** case-insensitive comparison operators */
 type IComparisonOperator = `i${BaseComparisonOperator}`
-export type ComparisonOperator = BaseComparisonOperator | IComparisonOperator
+type ComparisonOperator = BaseComparisonOperator | IComparisonOperator
 
 const allComparisonOperators = [...comparisonOperators, ...comparisonOperators.map((op) => `i${op}`)]
 export const isComparisonOperator = (value: string): value is ComparisonOperator =>
   allComparisonOperators.includes(value)
+
+export type ASTNode = QueryNode
+
+interface QueryNode {
+  type: "query"
+  filter: FilterNode
+  operations: OperationNode[]
+}
+
+export interface FilterNode {
+  type: "filter"
+  expression: ExpressionNode
+}
+
+export type ExpressionNode = ComparisonNode | NotOpNode | LogicalOpNode | MatchAllNode
 
 export interface ComparisonNode {
   type: "comparison"
@@ -18,13 +33,21 @@ export interface ComparisonNode {
 
 export interface NotOpNode {
   type: "not"
-  operand: ASTNode
+  operand: ExpressionNode
 }
 
 export interface LogicalOpNode {
   type: "and" | "or"
-  left: ASTNode
-  right: ASTNode
+  left: ExpressionNode
+  right: ExpressionNode
 }
 
-export type ASTNode = ComparisonNode | NotOpNode | LogicalOpNode
+export interface OperationNode {
+  type: "operation"
+  name: string
+  args: string[]
+}
+
+interface MatchAllNode {
+  type: "match_all"
+}
