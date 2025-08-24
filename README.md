@@ -435,7 +435,7 @@ rating >= 8.5 | SORT rating desc | LIMIT 10
 - Queries are terminated by end of input
 - Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
 - Fields and values can have certain characters "attached" to them that must be tokenized appropriately:
-  - Fields can have a leading `(`, or `!` (or both). They can also have a trailing `)`. e.g. `!(monitored)` would be tokenized as four tokens: `["!", "(", "monitored", ")"]`
+  - Fields can have a leading `(` or `!` (or both). They can also have a trailing `)`. e.g. `!(monitored)` would be tokenized as four tokens: `["!", "(", "monitored", ")"]`
   - Values can have a trailing `)`. e.g. `(title == Matrix)` would be tokenized as five tokens: `["(", "title", "==", "Matrix", ")"]`
 - Values are either **unquoted** or **quoted**
   - Values requiring whitespace must be enclosed in double quotes: `"The Matrix"`
