@@ -1,5 +1,3 @@
-import { LexerError } from "~/lexer/lexer.js"
-
 export const comparisonOperators = [
   "==", // equals
   "!=", // not equals
@@ -12,44 +10,40 @@ export const comparisonOperators = [
 ] as const
 
 /**
- * A map of token types to their corresponding characters/strings.
+ * A map of filter token types to their corresponding characters/strings.
  */
-export const tokenTypeMap = {
-  FIELD: undefined,
-  COMPARISON_OPERATOR: comparisonOperators,
-  VALUE: undefined,
-  QUOTED_VALUE: '"',
+export const filterTokenMap = {
   LPAREN: "(",
   RPAREN: ")",
   NOT: "!",
   AND: "&&",
   OR: "||",
-  EOF: undefined, // end of input
+  VALUE: undefined,
+  COMPARISON_OPERATOR: comparisonOperators,
+  MATCH_ALL: "*",
+  FIELD: undefined,
 } as const
-
-const tokens = Object.values(tokenTypeMap)
-  .flat()
-  .filter((token) => token !== undefined)
+export type FilterTokenType = keyof typeof filterTokenMap
 
 /**
- * An array of tokens that terminate a FIELD or VALUE
+ * Because operations must come at the end of a query, operations can effectively be treated as independent grammar.
+ *
+ * In other words, once we encounter an operation, the lexer no longer has to worry about any other token types.
  */
-const terminators = [" ", "\t", "\n", "\r", ...tokens] as const
-type Terminator = (typeof terminators)[number]
+export const operationTokenMap = {
+  PIPE: "|",
+  OPERATION_NAME: undefined,
+  OPERATION_ARGUMENT: undefined,
+} as const
+export type OperationTokenType = keyof typeof operationTokenMap
 
-export const isTerminator = (token: string): token is Terminator => {
-  // when we reach the end of the input, the passed in token has a length of 1, so we pad it with a space
-  const paddedToken = token.padEnd(2)
-
-  const firstChar = paddedToken[0]
-  // terminators are always 1 or 2 characters long, this should never throw unless we make a mistake when calling it
-  if (!(firstChar && paddedToken.length === 2))
-    throw new LexerError(`INTERNAL ERROR: provided token ${token} string is not of length 2`)
-  return terminators.includes(firstChar as Terminator) || terminators.includes(paddedToken as Terminator)
+const tokenMap = {
+  ...filterTokenMap,
+  ...operationTokenMap,
+  EOF: undefined, // end of input
 }
 
-type TokenType = keyof typeof tokenTypeMap
-
+export type TokenType = keyof typeof tokenMap
 export interface Token {
   type: TokenType
   value: string

@@ -4,272 +4,525 @@ import { Lexer } from "~/lexer/lexer.js"
 import type { Token } from "~/lexer/types.js"
 import { comparisonOperators } from "~/lexer/types.js"
 
-const createEofToken = (input: string): Token => ({
+const createEofToken = (query: string): Token => ({
   type: "EOF",
   value: "",
-  position: input.length,
+  position: query.length,
 })
 
-describe("lexer", () => {
-  it("should handle value", () => {
-    const input = "field == value"
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
+describe("Lexer", () => {
+  describe("comparisons", () => {
+    it("should handle field", () => {
+      const query = "field"
+
+      const expected: Token[] = [{ type: "FIELD", value: "field", position: 0 }, createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle syntax in fields/values", () => {
+      const query = "foo|f(i)e!l&&d||"
+
+      const expected: Token[] = [{ type: "FIELD", value: "foo|f(i)e!l&&d||", position: 0 }, createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle comparison without whitespace", () => {
+      const query = "field==value"
+
+      const expected: Token[] = [{ type: "FIELD", value: "field==value", position: 0 }, createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle field and comparison operator", () => {
+      const query = "field =="
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle comparison operator and value", () => {
+      const query = "== value"
+
+      const expected: Token[] = [
+        { type: "COMPARISON_OPERATOR", value: "==", position: 0 },
+        { type: "VALUE", value: "value", position: 3 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle comparison", () => {
+      const query = "field == value"
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "value", position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle multiple comparisons", () => {
+      const query = "field == value && field == value"
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "value", position: 9 },
+        { type: "AND", value: "&&", position: 15 },
+        { type: "FIELD", value: "field", position: 18 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 24 },
+        { type: "VALUE", value: "value", position: 27 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle case-insensitive comparison", () => {
+      const query = "field i== value"
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "i==", position: 6 },
+        { type: "VALUE", value: "value", position: 10 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle quoted value", () => {
+      const query = 'field == "value"'
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "value", position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle quoted words", () => {
+      const query = '"field" "==" "value"'
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 8 },
+        { type: "VALUE", value: "value", position: 13 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle empty quoted value", () => {
+      const query = 'field == ""'
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "", position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle quoted value with escape sequences", () => {
+      const query = 'field == "value \\"quoted\\" \\slash \\\\doubleslash"' // 'field == "value \"quoted\" \slash \\doubleslash"'
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: 'value "quoted" \\slash \\\\doubleslash', position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle extra whitespace", () => {
+      const query = ' field  ==   "value"    '
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 1 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 8 },
+        { type: "VALUE", value: "value", position: 13 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle empty query", () => {
+      const query = ""
+
+      const expected: Token[] = [createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle whitespace-only query", () => {
+      const query = "  "
+
+      const expected: Token[] = [createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle all comparison operators", () => {
+      const query = comparisonOperators.map((op) => `field ${op} value`).join(" && ")
+
+      const expectedTokens: Token[] = comparisonOperators
+        .flatMap((op, index) => [
+          {
+            type: "FIELD",
+            value: "field",
+            position: index * 18,
+          },
+          {
+            type: "COMPARISON_OPERATOR",
+            value: op,
+            position: index * 18 + 6,
+          },
+          {
+            type: "VALUE",
+            value: "value",
+            position: index * 18 + 9,
+          },
+          {
+            type: "AND",
+            value: "&&",
+            position: index * 18 + 15,
+          },
+        ])
+        .slice(0, -1) as Token[] // get rid of the last AND token
+      const expected: Token[] = [...expectedTokens, createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle all case-insensitive comparison operators", () => {
+      const query = comparisonOperators.map((op) => `field i${op} value`).join(" && ")
+
+      const expectedTokens: Token[] = comparisonOperators
+        .flatMap((op, index) => [
+          {
+            type: "FIELD",
+            value: "field",
+            position: index * 19,
+          },
+          {
+            type: "COMPARISON_OPERATOR",
+            value: `i${op}`,
+            position: index * 19 + 6,
+          },
+          {
+            type: "VALUE",
+            value: "value",
+            position: index * 19 + 10,
+          },
+          {
+            type: "AND",
+            value: "&&",
+            position: index * 19 + 16,
+          },
+        ])
+        .slice(0, -1) as Token[] // get rid of the last AND token
+      const expected: Token[] = [...expectedTokens, createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+  })
+
+  describe("logical operators", () => {
+    it("should handle parentheses", () => {
+      const query = "( )"
+
+      const expected: Token[] = [
+        { type: "LPAREN", value: "(", position: 0 },
+        { type: "RPAREN", value: ")", position: 2 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle logical operators", () => {
+      const query = "! && ||"
+
+      const expected: Token[] = [
+        { type: "NOT", value: "!", position: 0 },
+        { type: "AND", value: "&&", position: 2 },
+        { type: "OR", value: "||", position: 5 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+  })
+
+  describe("match-all", () => {
+    it("should handle match-all", () => {
+      const query = "*"
+
+      const expected: Token[] = [{ type: "MATCH_ALL", value: "*", position: 0 }, createEofToken(query)]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle match-all with comparisons", () => {
+      const query = "field == value && *"
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "value", position: 9 },
+        { type: "AND", value: "&&", position: 15 },
+        { type: "MATCH_ALL", value: "*", position: 18 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should only tokenize as MATCH_ALL when used in field position", () => {
+      const query = "field == *"
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "*", position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+  })
+
+  describe("attached operators", () => {
+    it("should handle parentheses attached to fields", () => {
+      const query = "(field)"
+
+      const expected: Token[] = [
+        { type: "LPAREN", value: "(", position: 0 },
+        { type: "FIELD", value: "field", position: 1 },
+        { type: "RPAREN", value: ")", position: 6 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle NOT attached to fields", () => {
+      const query = "!field"
+
+      const expected: Token[] = [
+        { type: "NOT", value: "!", position: 0 },
+        { type: "FIELD", value: "field", position: 1 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle NOT and LPAREN attached to field", () => {
+      const query = "!(field)"
+
+      const expected: Token[] = [
+        { type: "NOT", value: "!", position: 0 },
+        { type: "LPAREN", value: "(", position: 1 },
+        { type: "FIELD", value: "field", position: 2 },
+        { type: "RPAREN", value: ")", position: 7 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle RPAREN attached to values", () => {
+      const query = "(field == value)"
+
+      const expected: Token[] = [
+        { type: "LPAREN", value: "(", position: 0 },
+        { type: "FIELD", value: "field", position: 1 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 7 },
+        { type: "VALUE", value: "value", position: 10 },
+        { type: "RPAREN", value: ")", position: 15 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+  })
+
+  describe("operations", () => {
+    const baseQuery = "field == value"
+    const baseExpected: Token[] = [
       { type: "FIELD", value: "field", position: 0 },
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "VALUE", value: "value", position: 9 },
-      createEofToken(input),
     ]
 
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
+    it("should handle operation", () => {
+      const query = `${baseQuery} | operation_name arg1 arg2`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "PIPE", value: "|", position: 15 },
+        { type: "OPERATION_NAME", value: "operation_name", position: 17 },
+        { type: "OPERATION_ARGUMENT", value: "arg1", position: 32 },
+        { type: "OPERATION_ARGUMENT", value: "arg2", position: 37 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle multiple operations", () => {
+      const query = `${baseQuery} | operation_name arg1 | another_operation arg1 arg2`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "PIPE", value: "|", position: 15 },
+        { type: "OPERATION_NAME", value: "operation_name", position: 17 },
+        { type: "OPERATION_ARGUMENT", value: "arg1", position: 32 },
+        { type: "PIPE", value: "|", position: 37 },
+        { type: "OPERATION_NAME", value: "another_operation", position: 39 },
+        { type: "OPERATION_ARGUMENT", value: "arg1", position: 57 },
+        { type: "OPERATION_ARGUMENT", value: "arg2", position: 62 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle empty operations", () => {
+      const query = `${baseQuery} | |`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "PIPE", value: "|", position: 15 },
+        { type: "PIPE", value: "|", position: 17 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle operation after empty operation", () => {
+      const query = `${baseQuery} | | operation_name arg1`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "PIPE", value: "|", position: 15 },
+        { type: "PIPE", value: "|", position: 17 },
+        { type: "OPERATION_NAME", value: "operation_name", position: 19 },
+        { type: "OPERATION_ARGUMENT", value: "arg1", position: 34 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle operation when query has '||' operator", () => {
+      const query = `${baseQuery} || field == value | operation_name arg1 arg2`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "OR", value: "||", position: 15 },
+        { type: "FIELD", value: "field", position: 18 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 24 },
+        { type: "VALUE", value: "value", position: 27 },
+        { type: "PIPE", value: "|", position: 33 },
+        { type: "OPERATION_NAME", value: "operation_name", position: 35 },
+        { type: "OPERATION_ARGUMENT", value: "arg1", position: 50 },
+        { type: "OPERATION_ARGUMENT", value: "arg2", position: 55 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle everything after the first PIPE as operations", () => {
+      const query = `${baseQuery} | field == value`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "PIPE", value: "|", position: 15 },
+        { type: "OPERATION_NAME", value: "field", position: 17 },
+        { type: "OPERATION_ARGUMENT", value: "==", position: 23 },
+        { type: "OPERATION_ARGUMENT", value: "value", position: 26 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
   })
 
-  it("should handle quoted value", () => {
-    const input = 'field == "value"'
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "field", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "QUOTED_VALUE", value: "value", position: 9 },
-      createEofToken(input),
-    ]
+  describe("error handling", () => {
+    it("should throw on unterminated string", () => {
+      const query = 'field == "unterminated'
 
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
+      expect(() => new Lexer().tokenize(query)).toThrowErrorWithNameAndMessage(
+        "LexerError",
+        "Unterminated quote at position 22",
+      )
+    })
 
-  it("should handle empty quoted value", () => {
-    const input = 'field == ""'
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "field", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "QUOTED_VALUE", value: "", position: 9 },
-      createEofToken(input),
-    ]
+    it("should throw on unexpected character", () => {
+      const query = 'field ""'
 
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle input with varying spaces", () => {
-    const input = 'field=="value"&& other  !=   test'
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "field", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 5 },
-      { type: "QUOTED_VALUE", value: "value", position: 7 },
-      { type: "AND", value: "&&", position: 14 },
-      { type: "FIELD", value: "other", position: 17 },
-      { type: "COMPARISON_OPERATOR", value: "!=", position: 24 },
-      { type: "VALUE", value: "test", position: 29 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle whitespace in input", () => {
-    const input = " field == value "
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "field", position: 1 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 7 },
-      { type: "VALUE", value: "value", position: 10 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle quoted value with escape sequences", () => {
-    const input = 'field == "value \\"quoted\\" \\slash \\\\doubleslash"' // 'field == "value \"quoted\" \slash \\doubleslash"'
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "field", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "QUOTED_VALUE", value: 'value "quoted" \\slash \\\\doubleslash', position: 9 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle reserved characters in quoted value", () => {
-    const input = 'field == "$value&"'
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "field", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-      { type: "QUOTED_VALUE", value: "$value&", position: 9 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle all comparison operators", () => {
-    const input = comparisonOperators.map((op) => `field ${op} value`).join(" && ")
-    const lexer = new Lexer(input)
-    const expectedTokens: Token[] = comparisonOperators
-      .flatMap((op, index) => [
-        {
-          type: "FIELD",
-          value: "field",
-          position: index * 18,
-        },
-        {
-          type: "COMPARISON_OPERATOR",
-          value: op,
-          position: index * 18 + 6,
-        },
-        {
-          type: "VALUE",
-          value: "value",
-          position: index * 18 + 9,
-        },
-        {
-          type: "AND",
-          value: "&&",
-          position: index * 18 + 15,
-        },
-      ])
-      .slice(0, -1) as Token[] // get rid of the last AND token
-    const expected: Token[] = [...expectedTokens, createEofToken(input)]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle all case-insensitive comparison operators", () => {
-    const input = comparisonOperators.map((op) => `field i${op} value`).join(" && ")
-    const lexer = new Lexer(input)
-    const expectedTokens: Token[] = comparisonOperators
-      .flatMap((op, index) => [
-        {
-          type: "FIELD",
-          value: "field",
-          position: index * 19,
-        },
-        {
-          type: "COMPARISON_OPERATOR",
-          value: `i${op}`,
-          position: index * 19 + 6,
-        },
-        {
-          type: "VALUE",
-          value: "value",
-          position: index * 19 + 10,
-        },
-        {
-          type: "AND",
-          value: "&&",
-          position: index * 19 + 16,
-        },
-      ])
-      .slice(0, -1) as Token[] // get rid of the last AND token
-    const expected: Token[] = [...expectedTokens, createEofToken(input)]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle case-insensitive comparison", () => {
-    const input = "i i== value"
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "i", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "i==", position: 2 },
-      { type: "VALUE", value: "value", position: 6 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle field that ends with 'i'", () => {
-    const input = "i == value"
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "FIELD", value: "i", position: 0 },
-      { type: "COMPARISON_OPERATOR", value: "==", position: 2 },
-      { type: "VALUE", value: "value", position: 5 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle parentheses", () => {
-    const input = "( )"
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "LPAREN", value: "(", position: 0 },
-      { type: "RPAREN", value: ")", position: 2 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should handle logical operators", () => {
-    const input = "! && ||"
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "NOT", value: "!", position: 0 },
-      { type: "AND", value: "&&", position: 2 },
-      { type: "OR", value: "||", position: 5 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should distinguish ! from field and !=", () => {
-    const input = "!field != value"
-    const lexer = new Lexer(input)
-    const expected: Token[] = [
-      { type: "NOT", value: "!", position: 0 },
-      { type: "FIELD", value: "field", position: 1 },
-      { type: "COMPARISON_OPERATOR", value: "!=", position: 7 },
-      { type: "VALUE", value: "value", position: 10 },
-      createEofToken(input),
-    ]
-
-    const tokens = lexer.tokenize()
-    expect(tokens).toEqual(expected)
-  })
-
-  it("should throw on unterminated string", () => {
-    const input = 'field == "unterminated'
-    const lexer = new Lexer(input)
-    expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage("LexerError", "Unterminated string at position 22")
-  })
-
-  it("should throw when ambiguous case-insensitive operator is at the start of the query", () => {
-    const input = "i==value"
-    const lexer = new Lexer(input)
-    expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage(
-      "LexerError",
-      "Ambiguous syntax 'i==' at position 0: field is missing or you meant 'i =='",
-    )
-  })
-
-  it("should throw when case-insensitive operator is not preceded by whitespace", () => {
-    const input = "fieldi==value"
-    const lexer = new Lexer(input)
-    expect(() => lexer.tokenize()).toThrowErrorWithNameAndMessage(
-      "LexerError",
-      "Ambiguous syntax 'i==' at position 5: case-insensitive operators must be preceded by whitespace",
-    )
+      expect(() => new Lexer().tokenize(query)).toThrowErrorWithNameAndMessage(
+        "LexerError",
+        "Unexpected character '\"' at position 6",
+      )
+    })
   })
 })

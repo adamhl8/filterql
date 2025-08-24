@@ -1,196 +1,288 @@
-import type { Entries } from "type-fest"
+import type { FilterTokenType, OperationTokenType, Token, TokenType } from "~/lexer/types.js"
+import { comparisonOperators, filterTokenMap, operationTokenMap } from "~/lexer/types.js"
 
-import type { Token } from "~/lexer/types.js"
-import { comparisonOperators, isTerminator, tokenTypeMap } from "~/lexer/types.js"
+type HandlerFn = (currentWord: string, tokenStart: number) => Token | Token[] | undefined
 
 const WHITESPACE = /\s/
+const QUOTE_CHAR = '"'
+const BACKSLASH_CHAR = "\\"
 
 export class Lexer {
-  private readonly input: string
+  private query = ""
   /**
    * The `this.#position` property should never need to be accessed directly. Use `this.position` to get the current position or `this.advanceBy` to adjust the position.
    *
    * This allows us to guarantee that `this.current` is always updated along with `this.#position`.
    */
   #position = 0
-  private current: string
+  private current = ""
   private readonly tokens: Token[] = []
 
   /**
-   * Each token type has a corresponding handler function that returns the value for the token or `undefined`.
-   * Returning `undefined` indicates that `this.current` is not a valid token for the current token type, and the lexer should try the next token type.
+   * We are done lexing the filter once we encounter the first PIPE token, after which we switch to the operation token handlers
    *
-   * Each handler is responsible for advancing the lexer's position.
+   * This is set to `false` when we encounter the first PIPE token
    */
-  private readonly tokenHandlers = {
-    FIELD: () => {
-      let field = ""
+  private isFilter = true
 
-      const previousToken = this.tokens.at(-1)
-      // VALUE tokens are *always* preceded by a comparison operator
-      // if this is true, then this is a value
-      if (previousToken && previousToken.type === "COMPARISON_OPERATOR") return
+  /**
+   * Each token type has a corresponding handler function that returns the Token or `undefined`. A handler can also return an array of Token if it needs to emit multiple tokens.
+   *
+   * Returning `undefined` or an empty array indicates that the current word is not a valid token for the current token type, and the lexer should try the next token type.
+   *
+   * Each handler needs to correctly handle an empty `""` string.
+   */
+  private readonly filterTokenHandlers = {
+    LPAREN: (currentWord, tokenStart) => {
+      const lparen = filterTokenMap.LPAREN
+      if (currentWord !== lparen) return
 
-      while (this.position < this.input.length && !isTerminator(this.current + this.peekBy(1))) {
-        // don't consume 'i' if it's followed by an operator
-        const next = this.peekBy(2)
-        if (this.current === "i" && comparisonOperators.some((op) => next === op)) break
-
-        field += this.current
-        this.advanceBy(1)
-      }
-
-      if (field) return field
-      return
+      return { type: "LPAREN", value: lparen, position: tokenStart }
     },
-    COMPARISON_OPERATOR: () => {
-      let operator = ""
+    RPAREN: (currentWord, tokenStart) => {
+      const rparen = filterTokenMap.RPAREN
+      if (currentWord !== rparen) return
+
+      return { type: "RPAREN", value: rparen, position: tokenStart }
+    },
+    NOT: (currentWord, tokenStart) => {
+      const not = filterTokenMap.NOT
+      if (currentWord !== not) return
+
+      return { type: "NOT", value: not, position: tokenStart }
+    },
+    AND: (currentWord, tokenStart) => {
+      const and = filterTokenMap.AND
+      if (currentWord !== and) return
+
+      return { type: "AND", value: and, position: tokenStart }
+    },
+    OR: (currentWord, tokenStart) => {
+      const or = filterTokenMap.OR
+      if (currentWord !== or) return
+
+      return { type: "OR", value: or, position: tokenStart }
+    },
+    VALUE: (currentWord, tokenStart) => {
+      // VALUE tokens can be differentiated from FIELD tokens because VALUE tokens are *always* preceded by a COMPARISON_OPERATOR
+      if (this.tokens.at(-1)?.type !== "COMPARISON_OPERATOR") return
+
+      // if the value is an empty quoted value `""`, the currentWord should be empty and the current/next character should be `"`
+      if (!currentWord && this.current === QUOTE_CHAR && this.peekBy(1) === QUOTE_CHAR)
+        return { type: "VALUE", value: "", position: tokenStart }
+
+      if (!currentWord) return
+
+      return this.tokenizeAttachedOperators(currentWord, tokenStart, "VALUE")
+    },
+    COMPARISON_OPERATOR: (currentWord, tokenStart) => {
+      if (!currentWord) return
+
+      let comparisonOperator = currentWord
 
       // handle case-insensitive operator
-      if (this.current === "i") {
-        const next = this.peekBy(2)
-        if (comparisonOperators.some((op) => next === op)) {
-          // We need to handle an ambiguous query like 'i== value'. Is this supposed to be 'i == value' or 'i== value' (missing field)?
-          // To handle this, case-insensitive operators must be preceded by whitespace.
-          const isAtStart = this.position === 0
-          if (isAtStart)
-            throw new LexerError(
-              `Ambiguous syntax 'i${next}' at position ${this.position}: field is missing or you meant 'i ${next}'`,
-            )
-
-          const prevChar = this.peekBy(-1)
-          const precededByWhitespace = WHITESPACE.test(prevChar)
-          if (!precededByWhitespace)
-            throw new LexerError(
-              `Ambiguous syntax 'i${next}' at position ${this.position}: case-insensitive operators must be preceded by whitespace`,
-            )
-
-          operator += "i"
-          this.advanceBy(1)
-        }
-      }
+      if (currentWord.startsWith("i")) comparisonOperator = comparisonOperator.slice(1)
 
       for (const op of comparisonOperators) {
-        if (this.matchesString(op)) {
-          operator += op
-          this.advanceBy(op.length)
-          return operator
+        if (comparisonOperator === op) {
+          return { type: "COMPARISON_OPERATOR", value: currentWord, position: tokenStart }
         }
       }
 
-      // If we consumed 'i' but found no operator, we need to backtrack
-      if (operator === "i") this.advanceBy(-1)
-
       return
     },
-    VALUE: () => {
-      let value = ""
+    MATCH_ALL: (currentWord, tokenStart) => {
+      const matchAll = filterTokenMap.MATCH_ALL
+      if (currentWord !== matchAll) return
 
-      while (this.position < this.input.length && !isTerminator(this.current + this.peekBy(1))) {
-        value += this.current
-        this.advanceBy(1)
-      }
-
-      if (value) return value
-      return
+      return { type: "MATCH_ALL", value: currentWord, position: tokenStart }
     },
-    QUOTED_VALUE: () => {
-      const QUOTE_CHAR = tokenTypeMap.QUOTED_VALUE
-      const BACKSLASH_CHAR = "\\"
-      if (this.current !== QUOTE_CHAR) return
+    FIELD: (currentWord, tokenStart) => {
+      if (!currentWord) return
 
-      let value = ""
-      this.advanceBy(1) // Skip opening quote
-
-      while (this.position < this.input.length && this.current !== QUOTE_CHAR) {
-        if (this.current === BACKSLASH_CHAR) {
-          // Handle escaped characters
-          this.advanceBy(1)
-          if (this.current === QUOTE_CHAR) value += this.current
-          else value += `${BACKSLASH_CHAR}${this.current}`
-        } else {
-          value += this.current
-        }
-        this.advanceBy(1)
-      }
-
-      if (this.current !== QUOTE_CHAR) throw new LexerError(`Unterminated string at position ${this.position}`)
-
-      this.advanceBy(1) // Skip closing quote
-      return value // an empty quoted value is valid, so we don't return undefined here even if it's empty
+      return this.tokenizeAttachedOperators(currentWord, tokenStart, "FIELD")
     },
-    LPAREN: () => {
-      const lparen = tokenTypeMap.LPAREN
-      if (!this.matchesString(lparen)) return
+  } satisfies Record<FilterTokenType, HandlerFn>
 
-      this.advanceBy(lparen.length)
-      return lparen
+  private readonly operationTokenHandlers = {
+    PIPE: (currentWord, tokenStart) => {
+      const pipe = operationTokenMap.PIPE
+      if (currentWord !== pipe) return
+
+      return { type: "PIPE", value: pipe, position: tokenStart }
     },
-    RPAREN: () => {
-      const rparen = tokenTypeMap.RPAREN
-      if (!this.matchesString(rparen)) return
+    OPERATION_NAME: (currentWord, tokenStart) => {
+      // OPERATION_NAME tokens are *always* preceded by a PIPE. If this is true, then this isn't an OPERATION_NAME
+      if (!this.isPreviousToken("PIPE")) return
 
-      this.advanceBy(rparen.length)
-      return rparen
+      if (!currentWord) return
+
+      return { type: "OPERATION_NAME", value: currentWord, position: tokenStart }
     },
-    NOT: () => {
-      const not = tokenTypeMap.NOT
-      if (!this.matchesString(not)) return
+    OPERATION_ARGUMENT: (currentWord, tokenStart) => {
+      if (!currentWord) return
 
-      this.advanceBy(not.length)
-      return not
+      return { type: "OPERATION_ARGUMENT", value: currentWord, position: tokenStart }
     },
-    AND: () => {
-      const and = tokenTypeMap.AND
-      if (!this.matchesString(and)) return
+  } satisfies Record<OperationTokenType, HandlerFn>
 
-      this.advanceBy(and.length)
-      return and
-    },
-    OR: () => {
-      const or = tokenTypeMap.OR
-      if (!this.matchesString(or)) return
+  public tokenize(query: string): Token[] {
+    this.query = query
+    this.current = query[0] ?? ""
 
-      this.advanceBy(or.length)
-      return or
-    },
-    // biome-ignore lint/nursery/noUselessUndefined: EOF should never match
-    EOF: () => undefined,
-  } satisfies Record<keyof typeof tokenTypeMap, () => string | undefined>
-
-  public constructor(input: string) {
-    this.input = input
-    this.current = input[0] ?? ""
-  }
-
-  public tokenize(): Token[] {
-    while (this.position < this.input.length) {
+    while (!this.isEOF()) {
       this.skipWhitespace()
-      if (this.position >= this.input.length) break
+      if (this.isEOF()) break
 
-      const token = this.nextToken()
-      this.tokens.push(token)
+      const tokenArray = this.nextToken()
+      this.tokens.push(...tokenArray)
     }
 
     this.tokens.push({ type: "EOF", value: "", position: this.position })
     return this.tokens
   }
 
-  private nextToken(): Token {
-    const tokenStart = this.position
+  private nextToken(): Token[] {
+    const { word, rawWord } = this.getCurrentWord()
+    // If the word was quoted, we get the word without the quotes or escape sequence backslashes.
+    // After handling the word, we need to advance the position by the length of the raw word.
 
-    for (const [tokenType, handler] of Object.entries(this.tokenHandlers) as Entries<typeof this.tokenHandlers>) {
-      const tokenValue = handler()
-      if (tokenValue !== undefined) return { type: tokenType, value: tokenValue, position: tokenStart }
+    // once we hit the first PIPE, we switch to the operation token handlers
+    if (rawWord === operationTokenMap.PIPE) this.isFilter = false
+    const handlers = this.isFilter ? this.filterTokenHandlers : this.operationTokenHandlers
+
+    for (const handler of Object.values(handlers)) {
+      const handlerResult = handler(word, this.position)
+      if (!handlerResult) continue
+
+      const tokenArray = Array.isArray(handlerResult) ? handlerResult : [handlerResult]
+      if (tokenArray.length > 0) {
+        this.advanceBy(rawWord.length)
+        return tokenArray
+      }
     }
 
     throw new LexerError(`Unexpected character '${this.current}' at position ${this.position}`)
   }
 
+  /**
+   * Returns the current word at `this.position`. This does *not* advance the position.
+   *
+   * More specifically, it returns all characters until whitespace is encountered. In the case of quoted words, it returns all characters until the closing quote is encountered.
+   */
+  private getCurrentWord(): { word: string; rawWord: string } {
+    let word = ""
+    let rawWord = ""
+    let moveCount = 0
+    // because we don't increment the position in this function, we need to separately keep track of the cursor position in the given word and base the logic on that position
+    const wordPosition = () => this.position + moveCount
+
+    // In quoted words, the opening quote, closing quote, and escape sequence backslashes are not included in `word`.
+    // The `rawWord` represents the whole quoted word as it appears in the query. For unquoted words, `rawWord` will be equal to `word`.
+    // Every time we move along the quoted word, we also want to append to `rawWord`.
+    const moveCursor = () => {
+      rawWord += current()
+      moveCount++
+    }
+    const current = () => this.query[wordPosition()] ?? ""
+    const currentIsWhitespace = () => this.isWhitespace(current())
+    const isEOF = () => wordPosition() >= this.query.length
+
+    if (current() !== QUOTE_CHAR) {
+      while (!(isEOF() || currentIsWhitespace())) {
+        word += current()
+        moveCursor()
+      }
+
+      return { word, rawWord }
+    }
+
+    // handle quoted words
+    moveCursor() // skip opening quote
+    while (!isEOF() && current() !== QUOTE_CHAR) {
+      if (current() === BACKSLASH_CHAR) {
+        // handle escape sequences
+        moveCursor() // skip backslash
+        if (current() === QUOTE_CHAR) {
+          word += current()
+          moveCursor()
+        } else {
+          word += `${BACKSLASH_CHAR}${current()}` // if the backslash wasn't the start of an escape sequence, give it back to the word
+          moveCursor()
+        }
+        continue
+      }
+
+      word += current()
+      moveCursor()
+    }
+
+    if (current() !== QUOTE_CHAR) throw new LexerError(`Unterminated quote at position ${wordPosition()}`)
+
+    // add the closing quote to `rawWord`
+    moveCursor()
+
+    return { word, rawWord }
+  }
+
+  /**
+   * FIELD and VALUE words can have operators attached to them.
+   *
+   * FIELD words can have left attached operators: LPAREN, RPAREN, NOT, or NOT + LPAREN
+   * - e.g. '(field)', '!field', '!(field)'
+   * VALUE words can have right attached operators: RPAREN
+   * - e.g. '(field == value)'
+   */
+  private tokenizeAttachedOperators(currentWord: string, tokenStart: number, tokenType: "FIELD" | "VALUE"): Token[] {
+    const lparen = filterTokenMap.LPAREN
+    const not = filterTokenMap.NOT
+    const rparen = filterTokenMap.RPAREN
+
+    let word = currentWord
+    let wordStart = tokenStart
+
+    const tokens: Token[] = []
+
+    const handleLeftAttachedOperators = (type: "LPAREN" | "NOT", value: string) => {
+      tokens.push({ type, value, position: wordStart })
+      word = word.slice(value.length)
+      wordStart += value.length
+    }
+
+    if (tokenType === "FIELD") {
+      if (word.startsWith(not + lparen)) {
+        handleLeftAttachedOperators("NOT", not)
+        handleLeftAttachedOperators("LPAREN", lparen)
+      } else if (word.startsWith(lparen)) {
+        handleLeftAttachedOperators("LPAREN", lparen)
+      } else if (word.startsWith(not)) {
+        handleLeftAttachedOperators("NOT", not)
+      }
+    }
+
+    if (tokenType === "FIELD" || tokenType === "VALUE") {
+      if (word.endsWith(rparen)) {
+        word = word.slice(0, -rparen.length)
+        tokens.push({ type: tokenType, value: word, position: wordStart })
+        tokens.push({ type: "RPAREN", value: rparen, position: wordStart + word.length })
+      } else tokens.push({ type: tokenType, value: word, position: wordStart })
+    }
+
+    return tokens
+  }
+
+  private isEOF(): boolean {
+    return this.position >= this.query.length
+  }
+
   private skipWhitespace(): void {
-    while (this.position < this.input.length && WHITESPACE.test(this.current)) {
+    while (!this.isEOF() && this.isWhitespace(this.current)) {
       this.advanceBy(1)
     }
+  }
+
+  private isWhitespace(s: string): boolean {
+    return WHITESPACE.test(s)
   }
 
   private get position(): number {
@@ -199,25 +291,20 @@ export class Lexer {
 
   private advanceBy(count: number) {
     this.#position += count
-    this.current = this.input[this.position] ?? ""
+    this.current = this.query[this.position] ?? ""
   }
 
   private peekBy(count: number): string {
-    if (count < 0) return this.input.slice(this.position + count, this.position)
-    // slice returns from the start index up to but *not* including the end index
-    // e.g. say the input is "bar" and we're at position 1 ("a"), we would want peekBy(1) to return "r". So we want position 2 up to and including 2.
-    // In other words, we want to start at the *next* position, and end at the next position + count. i.e. "bar".slice(2, 3) -> "r"
-    // Note: an out of bounds end index is fine, slice always stops at the end of the string
-    const nextPosition = this.position + 1
-    return this.input.slice(nextPosition, nextPosition + count)
+    return this.query[this.position + count] ?? ""
   }
 
-  private matchesString(str: string): boolean {
-    return this.input.slice(this.position, this.position + str.length) === str
+  private isPreviousToken(tokenType: TokenType): boolean {
+    const previousToken = this.tokens.at(-1)
+    return previousToken?.type === tokenType
   }
 }
 
-export class LexerError extends Error {
+class LexerError extends Error {
   public constructor(message: string) {
     super(message)
     Object.setPrototypeOf(this, new.target.prototype)

@@ -1,32 +1,34 @@
-import type { Comparison, Data, EvaluatorOptions, Schema } from "~/evaluator/types.js"
-import type { ASTNode, BaseComparisonOperator, ComparisonNode, LogicalOpNode, NotOpNode } from "~/parser/types.js"
+import { BaseEvaluator } from "~/base-evaluator.js"
+import type { Comparison } from "~/filter-evaluator/types.js"
+import type {
+  BaseComparisonOperator,
+  ComparisonNode,
+  ExpressionNode,
+  FilterNode,
+  LogicalOpNode,
+  NotOpNode,
+} from "~/parser/types.js"
+import type { DataObject } from "~/types.js"
 
-export class Evaluator {
-  private readonly schema: Schema
-  private readonly fieldMap: Map<string, string> // alias/field -> canonical field
-  private readonly options: EvaluatorOptions
-
-  public constructor(schema: Schema, options: EvaluatorOptions) {
-    this.schema = schema
-    this.options = options
-
-    this.fieldMap = new Map()
-    for (const [field, config] of Object.entries(schema)) {
-      if (this.fieldMap.has(field)) throw new Error(`Duplicate field '${field}' in schema`)
-      this.fieldMap.set(field, field) // field maps to itself
-
-      if (config.alias) {
-        if (this.fieldMap.has(config.alias)) throw new Error(`Duplicate field alias '${config.alias}' in schema`)
-        this.fieldMap.set(config.alias, field) // alias maps to field
-      }
-    }
+export class FilterEvaluator extends BaseEvaluator {
+  /**
+   * Filters the data array by evaluating the AST node against each data object
+   */
+  public filter<T extends DataObject>(data: T[], node: FilterNode): T[] {
+    return data.filter((item) => this.evaluateFilter(node, item))
   }
 
   /**
-   * Evaluate an AST node against a data object
+   * Evaluate a FilterNode against a data object
    */
-  public evaluate(node: ASTNode, data: Data): boolean {
+  public evaluateFilter(node: FilterNode, data: DataObject): boolean {
+    return this.evaluateExpression(node.expression, data)
+  }
+
+  private evaluateExpression(node: ExpressionNode, data: DataObject): boolean {
     switch (node.type) {
+      case "match_all":
+        return true
       case "comparison":
         return this.evaluateComparison(node, data)
       case "and":
@@ -36,7 +38,7 @@ export class Evaluator {
       case "not":
         return this.evaluateNot(node, data)
       default:
-        throw new EvaluationError(`Unexpected node '${JSON.stringify(node)}'`)
+        throw new FilterEvaluatorError(`Unexpected node '${JSON.stringify(node)}'`)
     }
   }
 
@@ -45,7 +47,7 @@ export class Evaluator {
    */
   private resolveComparison(node: ComparisonNode): Comparison {
     // field is either the full field name or an alias
-    const field = this.fieldMap.get(node.field) ?? node.field
+    const field = this.resolveField(node.field) ?? node.field
     const fieldConfig = this.schema[field]
 
     const isCaseInsensitive = node.operator.startsWith("i")
@@ -58,14 +60,14 @@ export class Evaluator {
     // this check is not specific to any field type, but rather a general rule for numeric operators
     const isNumericOperator = [">=", "<="].includes(operator)
     if (isNumericOperator && !isValidNumber)
-      throw new EvaluationError(
+      throw new FilterEvaluatorError(
         `Invalid value '${value}' for field '${field}': the '${operator}' operator must be used with a number`,
       )
 
     if (!fieldConfig) {
       // if the field isn't in the schema and allowUnknownFields is true, give the field back as is
       if (this.options.allowUnknownFields) return { field, operator, value, isCaseInsensitive }
-      throw new EvaluationError(`Unknown field '${field}'`)
+      throw new FilterEvaluatorError(`Unknown field '${field}'`)
     }
 
     const { type } = fieldConfig
@@ -73,19 +75,19 @@ export class Evaluator {
     // we don't need to check for type === "string" because it's always valid
 
     if (type === "number" && !isValidNumber)
-      throw new EvaluationError(`Invalid value '${value}' for field '${field}' (${type})`)
+      throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${type})`)
 
     if (type === "boolean") {
       const lower = value.toLowerCase()
       if (lower !== "true" && lower !== "false")
-        throw new EvaluationError(`Invalid value '${value}' for field '${field}' (${type})`)
+        throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${type})`)
     }
 
     return { field, operator, value, isCaseInsensitive }
   }
 
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
-  private evaluateComparison(node: ComparisonNode, data: Data): boolean {
+  private evaluateComparison(node: ComparisonNode, data: DataObject): boolean {
     const { field, operator, value, isCaseInsensitive } = this.resolveComparison(node)
 
     // if the data doesn't have the field at all, it shouldn't be matched
@@ -132,12 +134,12 @@ export class Evaluator {
     if (operator === ">=") return dataValueNumber >= valueNumber
     if (operator === "<=") return dataValueNumber <= valueNumber
 
-    throw new EvaluationError(`Unexpected comparison operator '${operator}'`)
+    throw new FilterEvaluatorError(`Unexpected comparison operator '${operator}'`)
   }
 
-  private evaluateLogical(node: LogicalOpNode, data: Data): boolean {
-    const leftResult = this.evaluate(node.left, data)
-    const rightResult = this.evaluate(node.right, data)
+  private evaluateLogical(node: LogicalOpNode, data: DataObject): boolean {
+    const leftResult = this.evaluateExpression(node.left, data)
+    const rightResult = this.evaluateExpression(node.right, data)
 
     switch (node.type) {
       case "and":
@@ -145,20 +147,20 @@ export class Evaluator {
       case "or":
         return leftResult || rightResult
       default:
-        throw new EvaluationError(`Unexpected logical operator '${node.type}'`)
+        throw new FilterEvaluatorError(`Unexpected logical operator '${node.type}'`)
     }
   }
 
-  private evaluateNot(node: NotOpNode, data: Data): boolean {
-    return !this.evaluate(node.operand, data)
+  private evaluateNot(node: NotOpNode, data: DataObject): boolean {
+    return !this.evaluateExpression(node.operand, data)
   }
 }
 
-class EvaluationError extends Error {
+class FilterEvaluatorError extends Error {
   public constructor(message: string) {
     super(message)
     Object.setPrototypeOf(this, new.target.prototype)
-    this.name = "EvaluationError"
+    this.name = "FilterEvaluatorError"
   }
 }
 

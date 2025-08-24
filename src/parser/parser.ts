@@ -1,41 +1,55 @@
 import type { Token } from "~/lexer/types.js"
-import type { ASTNode, ComparisonNode } from "~/parser/types.js"
+import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "~/parser/types.js"
 import { isComparisonOperator } from "~/parser/types.js"
 
 export class Parser {
-  private readonly tokens: Token[]
+  private tokens: Token[] = []
   private position = 0
-  #current: Token
-
-  public constructor(tokens: Token[]) {
-    this.tokens = tokens
-    const firstToken = tokens[0]
-    if (!firstToken) throw new ParserError("Unexpected empty token array") // this should never happen when tokens are provided by the lexer, there's always an EOF token
-    this.#current = firstToken
-  }
+  #current: Token | undefined
 
   /**
    * Parse tokens into an AST following the grammar:
    *
-   * query := expr
+   * query := filter ( "|" operation )*
+   * filter := expr
+   * operation := operation_name arg*
    * expr := and_expr ( "||" and_expr )*
    * and_expr := term ( "&&" term )*
    * term := "!" term | "(" expr ")" | comparison
-   * comparison := field operator value | field
+   * comparison := field operator value | field | "*"
    */
-  public parse(): ASTNode {
-    const result = this.parseExpression()
+  public parse(tokens: Token[]): ASTNode {
+    this.tokens = tokens
+    this.#current = this.tokens[0]
+
+    const filter = this.parseFilter()
+    const operations = this.parseOperations()
 
     if (this.current().type !== "EOF")
       throw new ParserError(`Unexpected token '${this.current().value}' at position ${this.current().position}`)
 
-    return result
+    return {
+      type: "query",
+      filter,
+      operations,
+    }
+  }
+
+  /**
+   * filter := expr
+   */
+  private parseFilter(): FilterNode {
+    const expression = this.parseExpression()
+    return {
+      type: "filter",
+      expression,
+    }
   }
 
   /**
    * expr := and_expr ( "||" and_expr )*
    */
-  private parseExpression(): ASTNode {
+  private parseExpression(): ExpressionNode {
     let left = this.parseAndExpression()
 
     while (this.current().type === "OR") {
@@ -54,7 +68,7 @@ export class Parser {
   /**
    * and_expr := term ( "&&" term )*
    */
-  private parseAndExpression(): ASTNode {
+  private parseAndExpression(): ExpressionNode {
     let left = this.parseTerm()
 
     while (this.current().type === "AND") {
@@ -73,7 +87,7 @@ export class Parser {
   /**
    * term := "!" term | "(" expr ")" | comparison
    */
-  private parseTerm(): ASTNode {
+  private parseTerm(): ExpressionNode {
     if (this.current().type === "NOT") {
       this.advance() // consume !
       const operand = this.parseTerm()
@@ -92,6 +106,11 @@ export class Parser {
       return expr
     }
 
+    if (this.current().type === "MATCH_ALL") {
+      this.advance() // consume *
+      return { type: "match_all" }
+    }
+
     return this.parseComparison()
   }
 
@@ -102,9 +121,7 @@ export class Parser {
   private parseComparison(): ComparisonNode {
     const fieldToken = this.current()
     if (fieldToken.type !== "FIELD")
-      throw new ParserError(
-        `Expected field name but found '${this.current().value}' at position ${this.current().position}`,
-      )
+      throw new ParserError(`Expected field name but found '${fieldToken.value}' at position ${fieldToken.position}`)
     this.advance()
 
     const operatorToken = this.current()
@@ -115,14 +132,54 @@ export class Parser {
     this.advance()
 
     const valueToken = this.current()
-    if (valueToken.type !== "VALUE" && valueToken.type !== "QUOTED_VALUE")
+    if (valueToken.type !== "VALUE")
       throw new ParserError(`Expected value but found '${valueToken.value}' at position ${valueToken.position}`)
     this.advance()
 
     return { type: "comparison", field: fieldToken.value, operator: operatorToken.value, value: valueToken.value }
   }
 
+  /**
+   * Parse operations: ( "|" operation )*
+   */
+  private parseOperations(): OperationNode[] {
+    const operations: OperationNode[] = []
+
+    while (this.current().type === "PIPE") {
+      this.advance() // consume |
+      const operation = this.parseOperation()
+      operations.push(operation)
+    }
+
+    return operations
+  }
+
+  /**
+   * operation := operation_name arg*
+   */
+  private parseOperation(): OperationNode {
+    const operationNameToken = this.current()
+    if (operationNameToken.type !== "OPERATION_NAME")
+      throw new ParserError(
+        `Expected operation name but found '${operationNameToken.value}' at position ${operationNameToken.position}`,
+      )
+    this.advance()
+
+    const args: string[] = []
+    while (this.current().type === "OPERATION_ARGUMENT") {
+      args.push(this.current().value)
+      this.advance()
+    }
+
+    return {
+      type: "operation",
+      name: operationNameToken.value,
+      args,
+    }
+  }
+
   private current(): Token {
+    if (!this.#current) throw new ParserError("current token is undefined")
     return this.#current
   }
 
