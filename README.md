@@ -234,7 +234,7 @@ This is mainly useful when you don't want to filter the data but want to apply o
 
 ### Operations
 
-After filtering, you can apply operations to transform the data: `<filter> | <operation> [...args]`
+After filtering, you can apply operations to transform the data: `<filter> | <operation> [arg]...`
 
 ```
 year >= 2000 | SORT rating desc | LIMIT 10
