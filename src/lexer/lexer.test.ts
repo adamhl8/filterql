@@ -379,6 +379,21 @@ describe("Lexer", () => {
       expect(tokens).toEqual(expected)
     })
 
+    it("should handle LPAREN and NOT attached to field", () => {
+      const query = "(!field)"
+
+      const expected: Token[] = [
+        { type: "LPAREN", value: "(", position: 0 },
+        { type: "NOT", value: "!", position: 1 },
+        { type: "FIELD", value: "field", position: 2 },
+        { type: "RPAREN", value: ")", position: 7 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
     it("should handle RPAREN attached to values", () => {
       const query = "(field == value)"
 
@@ -388,6 +403,61 @@ describe("Lexer", () => {
         { type: "COMPARISON_OPERATOR", value: "==", position: 7 },
         { type: "VALUE", value: "value", position: 10 },
         { type: "RPAREN", value: ")", position: 15 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle operators that are part of the word", () => {
+      const query = "(f(ie)ld == v)al(ue)"
+
+      const expected: Token[] = [
+        { type: "LPAREN", value: "(", position: 0 },
+        { type: "FIELD", value: "f(ie)ld", position: 1 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 9 },
+        { type: "VALUE", value: "v)al(ue", position: 12 },
+        { type: "RPAREN", value: ")", position: 19 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle operators as part of quoted value", () => {
+      const query = 'field == "(value)"'
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: "(value)", position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toEqual(expected)
+    })
+
+    it("should handle nested attached operators", () => {
+      const query = "(!(!field1 == value1) && field2 == value2))"
+
+      const expected: Token[] = [
+        { type: "LPAREN", value: "(", position: 0 },
+        { type: "NOT", value: "!", position: 1 },
+        { type: "LPAREN", value: "(", position: 2 },
+        { type: "NOT", value: "!", position: 3 },
+        { type: "FIELD", value: "field1", position: 4 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 11 },
+        { type: "VALUE", value: "value1", position: 14 },
+        { type: "RPAREN", value: ")", position: 20 },
+        { type: "AND", value: "&&", position: 22 },
+        { type: "FIELD", value: "field2", position: 25 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 32 },
+        { type: "VALUE", value: "value2", position: 35 },
+        { type: "RPAREN", value: ")", position: 41 },
+        { type: "RPAREN", value: ")", position: 42 },
         createEofToken(query),
       ]
 

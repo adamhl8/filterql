@@ -202,6 +202,12 @@ Inside a quoted value, double quotes must be escaped:
 title == "A title with \"quotes\""
 ```
 
+Values ending with `)` _as part of the value_ (not a closing parenthesis) must be quoted:
+
+```
+title == "(a title surrounded by parentheses)"
+```
+
 #### Empty Value Checks
 
 Sometimes the data you're filtering might have empty values (`""`, `undefined`, `null`). You can filter for empty values by comparing to an empty string:
@@ -434,9 +440,11 @@ rating >= 8.5 | SORT rating desc | LIMIT 10
   - e.g. a query like `title==Matrix` would be tokenized as _one_ token with a value of `"title==Matrix"`
 - Queries are terminated by end of input
 - Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
-- Fields and values can have certain characters "attached" to them that must be tokenized appropriately:
-  - Fields can have a leading `(` or `!` (or both). They can also have a trailing `)`. e.g. `!(monitored)` would be tokenized as four tokens: `["!", "(", "monitored", ")"]`
-  - Values can have a trailing `)`. e.g. `(title == Matrix)` would be tokenized as five tokens: `["(", "title", "==", "Matrix", ")"]`
+- Fields and values can have operators "attached" to them that are automatically split off during tokenization:
+  - Fields can have one or more leading operators (`!`, `(`) and trailing operators (`)`) attached. e.g. `!(monitored)` becomes tokens: `["!", "(", "monitored", ")"]`
+  - Values can have one or more trailing operators (`)`) attached. e.g. `(title == Matrix)` becomes tokens: `["(", "title", "==", "Matrix", ")"]`
+    - As a consequence, values ending with `)` _as part of the value_ must be quoted: `field == "(value)"`
+  - This allows for natural syntax like `!(field == value)` without requiring spaces around operators
 - Values are either **unquoted** or **quoted**
   - Values requiring whitespace must be enclosed in double quotes: `"The Matrix"`
   - Double quotes (`"`) are the only valid quotes
