@@ -28,7 +28,7 @@
   "scripts": {
     "bundle": "rm -rf ./dist && bun lint && tsc -p tsconfig.build.json && tsc-alias",
     "knip": "knip-bun",
-    "lint": "markdown-toc -i --bullets '-' ./README.md && tsc --noEmit && biome check --write && bun knip && bun test",
+    "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && tsc --noEmit && biome check --write && bun knip && bun test",
     "prepare": "find .githooks -type f -exec ln -srf {} .git/hooks/ \\; || true",
     "prepublishOnly": "bun bundle"
   },
