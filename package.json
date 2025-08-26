@@ -1,6 +1,6 @@
 {
   "name": "filterql",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "type": "module",
   "description": "A tiny query language for filtering structured data",
   "repository": {
@@ -34,8 +34,8 @@
   },
   "devDependencies": {
     "@adamhl8/configs": "^0.11.1",
-    "@biomejs/biome": "^2.2.0",
-    "@types/bun": "^1.2.20",
+    "@biomejs/biome": "^2.2.2",
+    "@types/bun": "^1.2.21",
     "@types/node": "^24.3.0",
     "knip": "^5.63.0",
     "markdown-toc": "^1.2.0",
