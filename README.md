@@ -12,7 +12,7 @@ A tiny query language for filtering structured data 🚀
 
 In addition to the [Overview](#overview) below, there are three main sections of this README:
 
-- **[Queries](#queries)** - How to write queries
+- **[Queries](#queries)** - How to write FilterQL queries
 - **[TypeScript Library](#typescript-library)** - Usage of the FilterQL TypeScript library
 - **[FilterQL language specification](#language-specification)**
 
@@ -357,7 +357,7 @@ Or maybe something like this, where we join the elements/properties together:
 }
 ```
 
-> Why not support nested data structures?
+> _Why not support nested data structures?_
 
 Supporting nested data structures would require a more complex syntax, which goes against FilterQL's general principle that the query language should be relatively simple and easy to understand.
 
