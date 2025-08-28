@@ -10,39 +10,13 @@ A tiny query language for filtering structured data 🚀
 
 ---
 
-There are two main parts of this repository: the TypeScript library and the [FilterQL language specification](#language-specification). Implementations in other languages are more than welcome!
+In addition to the [Overview](#overview) below, there are three main sections of this README:
 
-<!-- toc -->
+- **[Queries](#queries)** - How to write queries
+- **[TypeScript Library](#typescript-library)** - Usage of the FilterQL TypeScript library
+- **[FilterQL language specification](#language-specification)**
 
-- [TypeScript Library](#typescript-library)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [A more realistic example](#a-more-realistic-example)
-  - [Queries](#queries)
-  - [Operations](#operations)
-  - [`FilterQL` Class](#filterql-class)
-  - [API Reference](#api-reference)
-- [Language Specification](#language-specification)
-  - [Grammar](#grammar)
-  - [Comparison Operators](#comparison-operators-1)
-  - [Logical Operators](#logical-operators-1)
-  - [Match-All](#match-all-1)
-  - [Operations](#operations-1)
-  - [Syntax Rules](#syntax-rules)
-  - [Implementation](#implementation)
-
-<!-- tocstop -->
-
-## TypeScript Library
-
-### Installation
-
-```bash
-bun add filterql
-# or: npm install filterql
-```
-
-### Usage
+## Overview
 
 Define a schema for your data and create a FilterQL instance:
 
@@ -67,51 +41,52 @@ const movies = [
 ]
 
 // Filter movies by genre
-const actionMovies = filterql.filter(movies, "genre == Action")
+const actionMovies = filterql.query(movies, "genre == Action")
 
 // Field aliases and multiple comparisons
-const recentGoodMovies = filterql.filter(movies, "y >= 2008 && rating >= 8.5")
+const recentGoodMovies = filterql.query(movies, "y >= 2008 && rating >= 8.5")
 
 // Sort the filtered data by using the built-in SORT operation
-const recentGoodMovies = filterql.filter(movies, "year >= 2008 | SORT rating desc")
+const recentGoodMovies = filterql.query(movies, "year >= 2008 | SORT rating desc")
 
 // Filter using boolean shorthand
-const monitoredMovies = filterql.filter(movies, "monitored")
+const monitoredMovies = filterql.query(movies, "monitored")
 ```
 
-### A more realistic example
+---
 
-Let's say you're building a CLI tool that fetches some data to be filtered by a query the user provides:
+<!-- toc -->
 
-```ts
-import { FilterQL } from "filterql"
+- [Queries](#queries)
+  - [Logical Operators](#logical-operators)
+  - [Comparison Operators](#comparison-operators)
+  - [Boolean Fields](#boolean-fields)
+  - [Quoted Values](#quoted-values)
+  - [Empty Value Checks](#empty-value-checks)
+  - [Match-All](#match-all)
+  - [Operations](#operations)
+- [TypeScript Library](#typescript-library)
+  - [Installation](#installation)
+  - [Example](#example)
+  - [Schemas](#schemas)
+  - [Handling data](#handling-data)
+  - [Options](#options)
+  - [Custom Operations](#custom-operations)
+  - [API Reference](#api-reference)
+- [Language Specification](#language-specification)
+  - [Grammar](#grammar)
+  - [Comparison Operators](#comparison-operators-1)
+  - [Logical Operators](#logical-operators-1)
+  - [Match-All](#match-all-1)
+  - [Operations](#operations-1)
+  - [Syntax Rules](#syntax-rules)
+  - [Implementation](#implementation)
 
-// data is an array of objects
-const data = await (await fetch("https://api.example.com/movies")).json()
+<!-- tocstop -->
 
-const query = process.argv[2] // first argument
+---
 
-const schema = {
-  title: { type: "string", alias: "t" },
-  year: { type: "number", alias: "y" },
-  monitored: { type: "boolean", alias: "m" },
-  rating: { type: "number" },
-  genre: { type: "string" },
-}
-
-const filterql = new FilterQL({ schema })
-const filteredMovies = filterql.filter(data, query)
-
-console.log(filteredMovies)
-```
-
-And then the user might use your CLI tool like this:
-
-```sh
-movie-cli '(genre == Action || genre == Comedy) && year >= 2000 && rating >= 8.5'
-```
-
-### Queries
+## Queries
 
 The most basic query is a single comparison: `<field> <comparison operator> <value>`
 
@@ -131,7 +106,7 @@ Combine multiple comparisons using logical operators for more complex queries:
 title == Interstellar && year == 2014
 ```
 
-#### Logical Operators
+### Logical Operators
 
 The following logical operators can be used in queries:
 
@@ -149,7 +124,7 @@ For example:
 
 `(genre == Action || genre == Thriller) && rating >= 8.5` means "genre must be Action or Thriller, and rating must be at least 8.5."
 
-#### Comparison Operators
+### Comparison Operators
 
 The following comparison operators can be used in comparisons:
 
@@ -169,7 +144,7 @@ The following comparison operators can be used in comparisons:
 title i== interstellar
 ```
 
-#### Boolean Fields
+### Boolean Fields
 
 For boolean fields, you can use the field name without any comparison to check for `true`:
 
@@ -177,7 +152,7 @@ For boolean fields, you can use the field name without any comparison to check f
 
 `!downloaded` is equivalent to `!(downloaded == true)`
 
-#### Quoted Values
+### Quoted Values
 
 If your comparison value has spaces, you must enclose it in double quotes:
 
@@ -197,7 +172,7 @@ Values ending with `)` _as part of the value_ (not a closing parenthesis) must b
 title == "(a title surrounded by parentheses)"
 ```
 
-#### Empty Value Checks
+### Empty Value Checks
 
 Sometimes the data you're filtering might have empty values (`""`, `undefined`, `null`). You can filter for empty values by comparing to an empty string:
 
@@ -213,7 +188,7 @@ Get all entries that have a rating:
 rating != ""
 ```
 
-#### Match-All
+### Match-All
 
 If you want to get _all_ of the entries, use `*` (the data is not filtered):
 
@@ -253,16 +228,59 @@ If you have any suggestions for other operations, please let me know by opening 
 > [!TIP]
 > You can also define **[custom operations](#custom-operations)**.
 
-### `FilterQL` Class
+## TypeScript Library
 
-#### Schemas
+### Installation
 
-The schema given to the `FilterQL` constructor determines what fields are allowed in queries.
+```bash
+bun add filterql
+# or: npm install filterql
+```
+
+### Example
+
+Let's say you're building a CLI tool that fetches some data to be filtered by a query the user provides:
+
+```ts
+import { FilterQL } from "filterql"
+
+// data is an array of objects
+const data = await (await fetch("https://api.example.com/movies")).json()
+
+const query = process.argv[2] // first argument
+
+const schema = {
+  title: { type: "string", alias: "t" },
+  year: { type: "number", alias: "y" },
+  monitored: { type: "boolean", alias: "m" },
+  rating: { type: "number" },
+  genre: { type: "string" },
+}
+
+const filterql = new FilterQL({ schema })
+const filteredMovies = filterql.query(data, query)
+
+console.log(filteredMovies)
+```
+
+And then the user might use your CLI tool like this:
+
+```sh
+movie-cli '(genre == Action || genre == Comedy) && year >= 2000 && rating >= 8.5'
+```
+
+### Schemas
+
+The schema given to the `FilterQL` constructor determines what fields and value types are allowed in queries.
 
 > [!IMPORTANT]
-> FilterQL does not care about extra properties/keys in the _data_.
+> The type of data the `FilterQL` methods accept is `Record<string, unknown>`. This means that **FilterQL does not care about extra properties/keys in the _data_**.
 >
 > In other words, a schema's keys can be a subset of the data's keys.
+>
+> Similarly, **the schema is _not_ used to validate the data**. It is only used to validate the values given in the _query_.
+>
+> See the [Handling data](#handling-data) section.
 
 Each field has a `type` and an (optional) `alias`.
 
@@ -282,10 +300,70 @@ Field types determine validation behavior:
 - `number`: The value must be coercible to a number
 - `boolean`: The value must be `true` or `false`
 
-> [!NOTE]
-> When a comparison value can't be coerced to the field's type, an error is thrown. For example, a query like `year = foo` will cause an error to be thrown.
+When a comparison value can't be coerced to the field's type, an error is thrown. For example, consider a query like `year = foo`.
 
-#### Options
+- The comparison value of `foo` can't be coerced to a number, so an error is thrown.
+
+### Handling data
+
+It's important to note that query comparisons are only evaluated against certain data types.
+
+- Specifically, a data value must be one of `string`, `number`, or `boolean`, `undefined`, or `null` to be evaluated.
+
+For example, say we have the following data:
+
+```ts
+const people = [
+  {
+    name: "Bob",
+    age: 30,
+    address: {
+      street: "123 Main St",
+      city: "Anytown",
+    },
+    roles: ["admin", "user"],
+  },
+  // more people...
+]
+```
+
+Passing in data like this is perfectly valid, but because the `address` and `roles` properties are not one of the comparable types, they can't be filtered on. e.g. a query like `roles == admin` won't return any results.
+
+If you want to filter on nested data like this, you should transform the data into a flat structure before passing it to FilterQL.
+
+For example, say you wanted to query for people who have the `"admin"` role. You could transform the data like this:
+
+```ts
+// query: 'roles_admin == true'
+{
+  name: "Bob",
+  age: 30,
+  address_street: "123 Main St",
+  address_city: "Anytown",
+  roles_admin: true,
+  roles_user: true,
+}
+```
+
+Or maybe something like this, where we join the elements/properties together:
+
+```ts
+// query: 'roles *= admin'
+{
+  name: "Bob",
+  age: 30,
+  address: "123 Main St, Anytown",
+  roles: "admin, user",
+}
+```
+
+> Why not support nested data structures?
+
+Supporting nested data structures would require a more complex syntax, which goes against FilterQL's general principle that the query language should be relatively simple and easy to understand.
+
+By effectively "forcing" data to be flattened (if you want to filter on those elements/properties), _that extra complexity/work is the developer's responsibility, not the person who's writing the query_.
+
+### Options
 
 ```ts
 const filterql = new FilterQL({
@@ -302,7 +380,7 @@ The `FilterQL` constructor accepts an optional `options` object with the followi
 
 - This could be useful in situations where the schema can't be determined ahead of time. i.e. the keys of the data are unknown or may change.
 
-#### Custom Operations
+### Custom Operations
 
 > [!TIP]
 > Take a look at the built-in operations in [src/operation-evaluator/operations.ts](./src/operation-evaluator/operations.ts) to see how they're implemented.
@@ -349,7 +427,7 @@ const customOperations: OperationMap = {
 
 ### API Reference
 
-#### `FilterQL`
+In addition to the primary `query` method, the `parse`, `applyFilter`, and `applyOperations` methods are available. These may be useful in cases where you want to filter and apply operations separately.
 
 ```ts
 class FilterQL {
@@ -358,11 +436,29 @@ class FilterQL {
     options?: FilterQLOptions,
     customOperations?: OperationMap
   })
-  filter<T extends Record<string, unknown>>(data: T[], query: string): T[]
+
+  /** Filter and apply operations to a data array with the given query */
+  query<T extends Record<string, unknown>>(data: T[], query: string): T[]
+
+  /**
+   * Parse a query string into an `ASTNode` containing the `FilterNode` and `OperationNode[]`
+   *
+   * You can use the returned `ASTNode` with the `applyFilter` and `applyOperations` methods
+   */
+  parse(query: string): ASTNode
+
+  /** Apply the given `FilterNode` to a data array */
+  applyFilter<T extends DataObject>(data: T[], filter: FilterNode): T[]
+
+  /** Apply the given `OperationNode[]` to a data array */
+  applyOperations<T extends DataObject>(data: T[], operations: OperationNode[]): T[]
 }
 ```
 
 ## Language Specification
+
+> [!NOTE]
+> Implementations in other languages are more than welcome!
 
 ### Grammar
 
@@ -410,6 +506,8 @@ title i== "the matrix"
 
 The `*` character can be used in place of a comparison. When evaluated, it _always_ matches.
 
+Examples:
+
 `* | SORT year`: Matches all entries and then sorts by `year`.
 
 `title == Matrix || * | SORT year`: This is effectively the same as the above query because the `|| *` matches all entries.
@@ -445,4 +543,4 @@ rating >= 8.5 | SORT rating desc | LIMIT 10
 
 ### Implementation
 
-This repository serves as a reference implementation for the language. See the source code for implementation details.
+This repository serves as a reference implementation for the language. There are many non-syntax rules/considerations that are not covered in this section of the README. See the source code for implementation details.
