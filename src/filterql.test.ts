@@ -5,15 +5,6 @@ import type { OperationMap } from "~/operation-evaluator/types.js"
 import { testData, testSchema } from "~/test-utils.js"
 
 describe("FilterQL", () => {
-  describe("filter", () => {
-    it("should return the data as-is when the query is empty", () => {
-      const filterql = new FilterQL({ schema: testSchema })
-      const result = filterql.query(testData, "")
-
-      expect(result).toBe(testData) // using toBe instead of toEqual because the object reference should be the same
-    })
-  })
-
   describe("usage", () => {
     it("should filter and sort movies", () => {
       const filterql = new FilterQL({ schema: testSchema })

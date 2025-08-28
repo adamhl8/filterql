@@ -22,6 +22,14 @@ export class Parser {
     this.tokens = tokens
     this.#current = this.tokens[0]
 
+    // an empty query is treated as a match-all filter
+    if (this.current().type === "EOF")
+      return {
+        type: "query",
+        filter: { type: "filter", expression: { type: "match_all" } },
+        operations: [],
+      }
+
     const filter = this.parseFilter()
     const operations = this.parseOperations()
 

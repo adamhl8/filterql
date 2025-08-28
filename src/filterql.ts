@@ -33,8 +33,6 @@ export class FilterQL {
    * Filter and apply operations to a data array with the given query
    */
   public query<T extends DataObject>(data: T[], query: string): T[] {
-    if (!query.trim()) return data
-
     const ast = this.parse(query)
     const filteredData = this.applyFilter(data, ast.filter)
     return this.applyOperations(filteredData, ast.operations)

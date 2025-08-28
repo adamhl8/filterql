@@ -27,6 +27,24 @@ describe("parser", () => {
       expect(result).toEqual(expected)
     })
 
+    it("should parse empty query as match-all filter", () => {
+      const query = ""
+
+      const expected: ASTNode = {
+        type: "query",
+        filter: {
+          type: "filter",
+          expression: {
+            type: "match_all",
+          },
+        },
+        operations: [],
+      }
+
+      const result = new Parser().parse(new Lexer().tokenize(query))
+      expect(result).toEqual(expected)
+    })
+
     it("should parse field shorthand", () => {
       const query = "available"
 

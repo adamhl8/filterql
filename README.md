@@ -528,6 +528,7 @@ rating >= 8.5 | SORT rating desc | LIMIT 10
 - Tokens/words in queries are terminated by whitespace (` `, `\t`, `\n`, `\r`)
   - e.g. a query like `title==Matrix` would be tokenized as _one_ token with a value of `"title==Matrix"`
 - Queries are terminated by end of input
+- An empty/blank query is equivalent to `*`
 - Fields can be used without a comparison operator: `monitored` is equivalent to `monitored == true`
 - Fields and values can have operators "attached" to them that are automatically split off during tokenization:
   - Fields can have one or more leading operators (`!`, `(`) and trailing operators (`)`) attached. e.g. `!(monitored)` becomes tokens: `["!", "(", "monitored", ")"]`
