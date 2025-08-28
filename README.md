@@ -345,7 +345,7 @@ For example, say you wanted to query for people who have the `"admin"` role. You
 }
 ```
 
-Or maybe something like this, where we join the elements/properties together:
+Or maybe something like this, where the elements/properties are joined as a string:
 
 ```ts
 // query: 'roles *= admin'
@@ -414,6 +414,8 @@ Three arguments are provided to a given operation function:
 - `args`: A string array containing any arguments passed to the operation.
 - `operationHelpers`: An object containing the FilterQL instance `schema`, `options`, and a `resolveField` function.
   - The `resolveField` function takes a string and returns the full field name if it exists in the schema. Use it to support field aliases in operations. e.g. `"t" -> "title"` or `"title" -> "title"` (full field name resolves to itself).
+
+#### Overriding built-in operations
 
 Built-in operations can be overridden by providing a custom operation with the same name:
 
