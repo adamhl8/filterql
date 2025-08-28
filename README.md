@@ -18,7 +18,7 @@ In addition to the [Overview](#overview) below, there are three main sections of
 
 ## Overview
 
-Define a schema for your data and create a FilterQL instance:
+Define a query schema and create a FilterQL instance:
 
 ```ts
 import { FilterQL } from "filterql"
