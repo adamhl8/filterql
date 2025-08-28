@@ -274,7 +274,7 @@ movie-cli '(genre == Action || genre == Comedy) && year >= 2000 && rating >= 8.5
 The schema given to the `FilterQL` constructor determines what fields and value types are allowed in queries.
 
 > [!IMPORTANT]
-> The type of data the `FilterQL` methods accept is `Record<string, unknown>`. This means that **FilterQL does not care about extra properties/keys in the _data_**.
+> The type of data the `FilterQL` methods accept is `Record<string, unknown>[]`. This means that **FilterQL does not care about extra properties/keys in the _data_**.
 >
 > In other words, a schema's keys can be a subset of the data's keys.
 >
