@@ -12,7 +12,7 @@ export interface FilterQLOptions {
 }
 export type RequiredFilterQLOptions = Required<FilterQLOptions>
 
-export type DataObject = Record<string | number | symbol, unknown>
+export type DataObject = Record<string, unknown>
 
 export class FilterQLError extends Error {
   public constructor(message: string) {

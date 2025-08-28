@@ -3,6 +3,7 @@ import { Lexer } from "~/lexer/lexer.js"
 import { OperationEvaluator } from "~/operation-evaluator/operation-evaluator.js"
 import type { OperationMap } from "~/operation-evaluator/types.js"
 import { Parser } from "~/parser/parser.js"
+import type { ASTNode, FilterNode, OperationNode } from "~/parser/types.js"
 import type { DataObject, FilterQLOptions, RequiredFilterQLOptions, Schema } from "~/types.js"
 
 const DEFAULT_OPTIONS: RequiredFilterQLOptions = { allowUnknownFields: false }
@@ -31,13 +32,30 @@ export class FilterQL {
   /**
    * Filter and apply operations to a data array with the given query
    */
-  public filter<T extends DataObject>(data: T[], query: string): T[] {
+  public query<T extends DataObject>(data: T[], query: string): T[] {
     if (!query.trim()) return data
 
-    const ast = this.parser.parse(this.lexer.tokenize(query))
+    const ast = this.parse(query)
+    const filteredData = this.applyFilter(data, ast.filter)
+    return this.applyOperations(filteredData, ast.operations)
+  }
 
-    const filteredData = this.filterEvaluator.filter(data, ast.filter)
+  /**
+   * Parse a query string into an `ASTNode` containing the `FilterNode` and `OperationNode[]`
+   *
+   * You can use the returned `ASTNode` with the `applyFilter` and `applyOperations` methods
+   */
+  public parse(query: string): ASTNode {
+    return this.parser.parse(this.lexer.tokenize(query))
+  }
 
-    return this.operationEvaluator.apply(filteredData, ast.operations)
+  /** Apply the given `FilterNode` to a data array */
+  public applyFilter<T extends DataObject>(data: T[], filter: FilterNode): T[] {
+    return this.filterEvaluator.filter(data, filter)
+  }
+
+  /** Apply the given `OperationNode[]` to a data array */
+  public applyOperations<T extends DataObject>(data: T[], operations: OperationNode[]): T[] {
+    return this.operationEvaluator.apply(data, operations)
   }
 }

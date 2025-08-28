@@ -118,6 +118,22 @@ describe("FilterEvaluator", () => {
 
       expect(result).toBeFalse()
     })
+
+    it("should return false for non-comparable data value type: array", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery("title == foo").filter
+      const result = filterEvaluator.evaluateFilter(node, { title: ["foo"] })
+
+      expect(result).toBeFalse()
+    })
+
+    it("should return false for non-comparable data value type: object", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery('title == "[object Object]"').filter
+      const result = filterEvaluator.evaluateFilter(node, { title: { foo: "bar" } })
+
+      expect(result).toBeFalse()
+    })
   })
 
   describe("comparison operators", () => {

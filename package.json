@@ -1,6 +1,6 @@
 {
   "name": "filterql",
-  "version": "2.0.2",
+  "version": "3.0.0",
   "type": "module",
   "description": "A tiny query language for filtering structured data",
   "repository": {
