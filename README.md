@@ -358,7 +358,7 @@ class FilterQL {
     options?: FilterQLOptions,
     customOperations?: OperationMap
   })
-  filter<T extends Record<string | number | symbol, unknown>>(data: T[], query: string): T[]
+  filter<T extends Record<string, unknown>>(data: T[], query: string): T[]
 }
 ```
 

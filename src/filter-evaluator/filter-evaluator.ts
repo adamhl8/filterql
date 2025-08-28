@@ -1,5 +1,6 @@
 import { BaseEvaluator } from "~/base-evaluator.js"
 import type { Comparison } from "~/filter-evaluator/types.js"
+import { isComparableDataValue } from "~/filter-evaluator/types.js"
 import type {
   BaseComparisonOperator,
   ComparisonNode,
@@ -94,6 +95,9 @@ export class FilterEvaluator extends BaseEvaluator {
     if (!Object.hasOwn(data, field)) return false
 
     const dataValue = data[field]
+
+    // we only want to compare against string, number, boolean, undefined, or null values
+    if (!isComparableDataValue(dataValue)) return false
 
     const isEmpty = (val: unknown) => val === "" || val === undefined || val === null
     // if the comparison value is "", it's an empty check
