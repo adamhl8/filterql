@@ -357,11 +357,14 @@ Or maybe something like this, where the elements/properties are joined as a stri
 }
 ```
 
-> _Why not support nested data structures?_
+<details>
+  <summary><i>Why not support nested data structures?</i></summary>
 
 Supporting nested data structures would require a more complex syntax, which goes against FilterQL's general principle that the query language should be relatively simple and easy to understand.
 
-By effectively "forcing" data to be flattened (if you want to filter on those elements/properties), _that extra complexity/work is the developer's responsibility, not the person who's writing the query_.
+By effectively "forcing" data to be flattened (if you want to filter on those elements/properties), <i>that extra complexity/work is the developer's responsibility, not the person who's writing the query</i>.
+
+</details>
 
 ### Options
 
