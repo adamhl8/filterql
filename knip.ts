@@ -1,9 +1,8 @@
+import { knipConfig } from "@adamhl8/configs"
 import type { KnipConfig } from "knip"
 
-const config: KnipConfig = {
-  entry: ["src/filterql.ts", "**/*.test.ts"],
-  project: ["**", "!src/test-setup.ts"],
-}
+const config = knipConfig({
+  project: ["!src/test-setup.ts"],
+} as const) satisfies KnipConfig
 
-// biome-ignore lint/style/noDefaultExport: needs to be default
 export default config

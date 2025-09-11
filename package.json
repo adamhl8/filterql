@@ -1,11 +1,11 @@
 {
   "name": "filterql",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "type": "module",
   "description": "A tiny query language for filtering structured data",
   "repository": {
     "type": "git",
-    "url": "https://github.com/adamhl8/filterql"
+    "url": "git+https://github.com/adamhl8/filterql.git"
   },
   "homepage": "https://github.com/adamhl8/filterql",
   "bugs": {
@@ -19,27 +19,28 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": ["dist/"],
   "keywords": ["filterql", "typescript", "query", "language", "data", "filter", "filtering"],
   "scripts": {
-    "bundle": "rm -rf ./dist && bun lint && tsc -p tsconfig.build.json && tsc-alias",
+    "bundle": "bun lint && bun tsdown",
     "knip": "knip-bun",
     "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && tsc --noEmit && biome check --write && bun knip && bun test",
     "prepare": "find .githooks -type f -exec ln -srf {} .git/hooks/ \\; || true",
     "prepublishOnly": "bun bundle"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.11.1",
-    "@biomejs/biome": "^2.2.2",
+    "@adamhl8/configs": "^0.14.6",
+    "@arethetypeswrong/core": "^0.18.2",
+    "@biomejs/biome": "^2.2.4",
     "@types/bun": "^1.2.21",
-    "@types/node": "^24.3.0",
-    "knip": "^5.63.0",
+    "knip": "^5.63.1",
     "markdown-toc": "^1.2.0",
-    "tsc-alias": "^1.8.16",
+    "publint": "^0.3.12",
+    "tsdown": "^0.15.0",
     "typescript": "^5.9.2"
   }
 }

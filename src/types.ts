@@ -21,4 +21,3 @@ export class FilterQLError extends Error {
     this.name = "FilterQLError"
   }
 }
-decodeURIComponent
