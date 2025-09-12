@@ -87,7 +87,6 @@ export class FilterEvaluator extends BaseEvaluator {
     return { field, operator, value, isCaseInsensitive }
   }
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
   private evaluateComparison(node: ComparisonNode, data: DataObject): boolean {
     const { field, operator, value, isCaseInsensitive } = this.resolveComparison(node)
 

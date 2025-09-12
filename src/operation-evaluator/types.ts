@@ -1,6 +1,6 @@
 import type { DataObject, FilterQLOptions, Schema } from "~/types.js"
 
-type OperationHelpers = {
+interface OperationHelpers {
   /** The schema of the FilterQL instance */
   schema: Schema
   /** The options of the FilterQL instance */

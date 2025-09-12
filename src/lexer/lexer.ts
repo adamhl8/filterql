@@ -1,7 +1,11 @@
 import type { FilterTokenType, OperationTokenType, Token, TokenType } from "~/lexer/types.js"
 import { comparisonOperators, filterTokenMap, operationTokenMap } from "~/lexer/types.js"
 
-type CurrentWord = { word: string; rawWord: string; isQuoted: boolean }
+interface CurrentWord {
+  word: string
+  rawWord: string
+  isQuoted: boolean
+}
 type HandlerFn = (currentWord: CurrentWord, tokenStart: number) => Token | Token[] | undefined
 /**
  * Each token type has a corresponding handler function that returns the Token or `undefined`. A handler can also return an array of Token if it needs to emit multiple tokens.

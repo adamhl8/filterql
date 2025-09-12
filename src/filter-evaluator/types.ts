@@ -7,12 +7,9 @@ export interface Comparison {
   isCaseInsensitive: boolean
 }
 
-export const isComparableDataValue = (value: unknown): value is string | number | boolean | undefined | null => {
-  return (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    value === undefined ||
-    value === null
-  )
-}
+export const isComparableDataValue = (value: unknown): value is string | number | boolean | undefined | null =>
+  typeof value === "string" ||
+  typeof value === "number" ||
+  typeof value === "boolean" ||
+  value === undefined ||
+  value === null
