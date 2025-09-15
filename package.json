@@ -26,16 +26,16 @@
   "files": ["dist/"],
   "keywords": ["filterql", "typescript", "query", "language", "data", "filter", "filtering"],
   "scripts": {
-    "bundle": "bun lint && bun tsdown",
-    "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && tsc --noEmit && biome check --write && bun knip-bun && bun test",
+    "bundle": "bun lint && tsdown",
+    "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && tsc --noEmit && biome check --write && adamhl8-knip && bun test",
     "prepare": "find .githooks -type f -exec ln -srf {} .git/hooks/ \\; || true",
     "prepublishOnly": "bun bundle"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.15.4",
+    "@adamhl8/configs": "^0.15.9",
     "@arethetypeswrong/core": "^0.18.2",
     "@biomejs/biome": "^2.2.4",
-    "@types/bun": "^1.2.21",
+    "@types/bun": "^1.2.22",
     "knip": "^5.63.1",
     "markdown-toc": "^1.2.0",
     "publint": "^0.3.12",
