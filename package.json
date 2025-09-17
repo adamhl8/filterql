@@ -32,14 +32,14 @@
     "prepublishOnly": "bun bundle"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.15.11",
+    "@adamhl8/configs": "^0.15.15",
     "@arethetypeswrong/core": "^0.18.2",
     "@biomejs/biome": "^2.2.4",
     "@types/bun": "^1.2.22",
     "knip": "^5.63.1",
     "markdown-toc": "^1.2.0",
     "publint": "^0.3.12",
-    "tsdown": "^0.15.1",
+    "tsdown": "^0.15.2",
     "typescript": "^5.9.2"
   }
 }
