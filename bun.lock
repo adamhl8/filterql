@@ -4,7 +4,7 @@
     "": {
       "name": "filterql",
       "devDependencies": {
-        "@adamhl8/configs": "^0.15.19",
+        "@adamhl8/configs": "^0.15.20",
         "@arethetypeswrong/core": "^0.18.2",
         "@biomejs/biome": "^2.2.4",
         "@types/bun": "^1.2.22",
@@ -17,7 +17,7 @@
     },
   },
   "packages": {
-    "@adamhl8/configs": ["@adamhl8/configs@0.15.19", "", { "dependencies": { "@prettier/plugin-xml": "^3.4.2", "es-toolkit": "^1.39.10", "prettier-plugin-astro": "^0.14.1", "prettier-plugin-sh": "^0.18.0", "prettier-plugin-tailwindcss": "^0.6.14", "prettier-plugin-toml": "^2.0.6", "remeda": "^2.31.1", "type-fest": "^5.0.0" }, "bin": { "adamhl8-knip": "dist/adamhl8-knip" } }, "sha512-9W2GuhAfXG65e8dbbwL6T5Vf/cwjkP/tUN6XPBYBSN0r+cCW6nOeL3S1yJBM4cPTp1htVoACYZy2sihwv2xSyw=="],
+    "@adamhl8/configs": ["@adamhl8/configs@0.15.20", "", { "dependencies": { "@prettier/plugin-xml": "^3.4.2", "es-toolkit": "^1.39.10", "prettier-plugin-astro": "^0.14.1", "prettier-plugin-sh": "^0.18.0", "prettier-plugin-tailwindcss": "^0.6.14", "prettier-plugin-toml": "^2.0.6", "remeda": "^2.32.0", "type-fest": "^5.0.0" }, "bin": { "adamhl8-knip": "dist/adamhl8-knip" } }, "sha512-t5V63M8pldaV9PduDkbaRxLxJc3kHhggT/r7Y2wAAFa5gCgwnVT6qsD3LTPAKBP0O3Fc0xQP5P0FNXAyB29tpg=="],
 
     "@andrewbranch/untar.js": ["@andrewbranch/untar.js@1.0.3", "", {}, "sha512-Jh15/qVmrLGhkKJBdXlK1+9tY4lZruYjsgkDFj08ZmDiWVBLJcqkok7Z0/R0In+i1rScBpJlSvrTS2Lm41Pbnw=="],
 
