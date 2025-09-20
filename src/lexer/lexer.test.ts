@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
 
-import { Lexer } from "~/lexer/lexer.js"
-import type { Token } from "~/lexer/types.js"
-import { comparisonOperators } from "~/lexer/types.js"
+import { Lexer } from "~/lexer/lexer.ts"
+import type { Token } from "~/lexer/types.ts"
+import { comparisonOperators } from "~/lexer/types.ts"
 
 const createEofToken = (query: string): Token => ({
   type: "EOF",

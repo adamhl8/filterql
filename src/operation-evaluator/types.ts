@@ -1,4 +1,4 @@
-import type { DataObject, FilterQLOptions, Schema } from "~/types.js"
+import type { DataObject, FilterQLOptions, Schema } from "~/types.ts"
 
 interface OperationHelpers {
   /** The schema of the FilterQL instance */

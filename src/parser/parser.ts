@@ -1,6 +1,6 @@
-import type { Token } from "~/lexer/types.js"
-import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "~/parser/types.js"
-import { isComparisonOperator } from "~/parser/types.js"
+import type { Token } from "~/lexer/types.ts"
+import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "~/parser/types.ts"
+import { isComparisonOperator } from "~/parser/types.ts"
 
 export class Parser {
   private tokens: Token[] = []

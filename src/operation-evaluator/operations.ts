@@ -1,4 +1,4 @@
-import type { OperationMap } from "~/operation-evaluator/types.js"
+import type { OperationMap } from "~/operation-evaluator/types.ts"
 
 export const defaultOperations: OperationMap = {
   LIMIT: (data, args) => {

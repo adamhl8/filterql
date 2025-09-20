@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
 
-import { OperationEvaluator } from "~/operation-evaluator/operation-evaluator.js"
-import type { OperationFn } from "~/operation-evaluator/types.js"
-import { parseQuery, testData, testOptions, testSchema } from "~/test-utils.js"
+import { OperationEvaluator } from "~/operation-evaluator/operation-evaluator.ts"
+import type { OperationFn } from "~/operation-evaluator/types.ts"
+import { parseQuery, testData, testOptions, testSchema } from "~/test-utils.ts"
 
 describe("OperationEvaluator", () => {
   describe("default operations", () => {

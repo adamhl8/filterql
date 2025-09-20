@@ -1,7 +1,7 @@
-import { Lexer } from "~/lexer/lexer.js"
-import { Parser } from "~/parser/parser.js"
-import type { ASTNode } from "~/parser/types.js"
-import type { DataObject, FilterQLOptions, Schema } from "~/types.js"
+import { Lexer } from "~/lexer/lexer.ts"
+import { Parser } from "~/parser/parser.ts"
+import type { ASTNode } from "~/parser/types.ts"
+import type { DataObject, FilterQLOptions, Schema } from "~/types.ts"
 
 export const parseQuery = (query: string): ASTNode => new Parser().parse(new Lexer().tokenize(query))
 

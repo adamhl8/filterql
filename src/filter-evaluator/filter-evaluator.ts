@@ -1,6 +1,6 @@
-import { BaseEvaluator } from "~/base-evaluator.js"
-import type { Comparison } from "~/filter-evaluator/types.js"
-import { isComparableDataValue } from "~/filter-evaluator/types.js"
+import { BaseEvaluator } from "~/base-evaluator.ts"
+import type { Comparison } from "~/filter-evaluator/types.ts"
+import { isComparableDataValue } from "~/filter-evaluator/types.ts"
 import type {
   BaseComparisonOperator,
   ComparisonNode,
@@ -8,8 +8,8 @@ import type {
   FilterNode,
   LogicalOpNode,
   NotOpNode,
-} from "~/parser/types.js"
-import type { DataObject } from "~/types.js"
+} from "~/parser/types.ts"
+import type { DataObject } from "~/types.ts"
 
 export class FilterEvaluator extends BaseEvaluator {
   /**

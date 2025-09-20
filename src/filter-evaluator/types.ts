@@ -1,4 +1,4 @@
-import type { BaseComparisonOperator } from "~/parser/types.js"
+import type { BaseComparisonOperator } from "~/parser/types.ts"
 
 export interface Comparison {
   field: string

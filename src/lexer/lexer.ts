@@ -1,5 +1,5 @@
-import type { FilterTokenType, OperationTokenType, Token, TokenType } from "~/lexer/types.js"
-import { comparisonOperators, filterTokenMap, operationTokenMap } from "~/lexer/types.js"
+import type { FilterTokenType, OperationTokenType, Token, TokenType } from "~/lexer/types.ts"
+import { comparisonOperators, filterTokenMap, operationTokenMap } from "~/lexer/types.ts"
 
 interface CurrentWord {
   word: string
