@@ -17,7 +17,7 @@
     },
   },
   "packages": {
-    "@adamhl8/configs": ["@adamhl8/configs@0.16.0", "", { "dependencies": { "@prettier/plugin-xml": "^3.4.2", "es-toolkit": "^1.39.10", "prettier-plugin-astro": "^0.14.1", "prettier-plugin-sh": "^0.18.0", "prettier-plugin-tailwindcss": "^0.6.14", "prettier-plugin-toml": "^2.0.6", "remeda": "^2.32.0", "type-fest": "^5.0.1" }, "bin": { "adamhl8-knip": "dist/adamhl8-knip", "ts-import-fix": "dist/ts-import-fix" } }, "sha512-kKDLHFe9/uPeFdqZnjHzxKL2SZsyWnjzbCuoSUz/8namxgpteBCzntPMOP3IR7RE0NSxcXAc/totC3IRqkLkHA=="],
+    "@adamhl8/configs": ["@adamhl8/configs@0.16.1", "", { "dependencies": { "@prettier/plugin-xml": "^3.4.2", "es-toolkit": "^1.39.10", "prettier-plugin-astro": "^0.14.1", "prettier-plugin-sh": "^0.18.0", "prettier-plugin-tailwindcss": "^0.6.14", "prettier-plugin-toml": "^2.0.6", "remeda": "^2.32.0", "type-fest": "^5.0.1" }, "bin": { "adamhl8-knip": "dist/adamhl8-knip", "ts-import-fix": "dist/ts-import-fix" } }, "sha512-7wuTpy7XTP+9P2bVUIuEFNBfXH6qvQZemJtVnMbjclhXjNxXF9/nzHNuaj+srV0gycSxsKH+dR7R2jiv4Hwtqg=="],
 
     "@andrewbranch/untar.js": ["@andrewbranch/untar.js@1.0.3", "", {}, "sha512-Jh15/qVmrLGhkKJBdXlK1+9tY4lZruYjsgkDFj08ZmDiWVBLJcqkok7Z0/R0In+i1rScBpJlSvrTS2Lm41Pbnw=="],
 
