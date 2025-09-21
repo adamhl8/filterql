@@ -33,7 +33,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@adamhl8/configs": "^0.16.0",
+    "@adamhl8/configs": "^0.16.4",
     "@arethetypeswrong/core": "^0.18.2",
     "@biomejs/biome": "^2.2.4",
     "@types/bun": "^1.2.22",
