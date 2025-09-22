@@ -4,7 +4,7 @@
     "": {
       "name": "filterql",
       "devDependencies": {
-        "@adamhl8/configs": "^0.17.1",
+        "@adamhl8/configs": "^0.17.2",
         "@arethetypeswrong/core": "^0.18.2",
         "@biomejs/biome": "^2.2.4",
         "@types/bun": "^1.2.22",
@@ -17,7 +17,7 @@
     },
   },
   "packages": {
-    "@adamhl8/configs": ["@adamhl8/configs@0.17.1", "", { "dependencies": { "@optique/core": "^0.5.0-dev.83", "@optique/run": "^0.5.0-dev.83", "@prettier/plugin-xml": "^3.4.2", "es-toolkit": "^1.39.10", "get-tsconfig": "^4.10.1", "picocolors": "^1.1.1", "prettier-plugin-astro": "^0.14.1", "prettier-plugin-sh": "^0.18.0", "prettier-plugin-tailwindcss": "^0.6.14", "prettier-plugin-toml": "^2.0.6", "remeda": "^2.32.0", "ts-explicit-errors": "^4.0.1", "tsdown": "^0.15.4", "type-fest": "^5.0.1" }, "peerDependencies": { "typescript": "^5.0.0" }, "bin": { "adamhl8-knip": "dist/adamhl8-knip/index", "ts-import-fix": "dist/ts-import-fix/index" } }, "sha512-5fxsXTRmHbAXx1JrXkuuabzumnL0ydoTJD7G/yz6Q8pu5ne7bXJN9FTyvZkuqGVX2zl9o65M6k+5FHAz0DfVFg=="],
+    "@adamhl8/configs": ["@adamhl8/configs@0.17.2", "", { "dependencies": { "@optique/core": "^0.5.0-dev.83", "@optique/run": "^0.5.0-dev.83", "@prettier/plugin-xml": "^3.4.2", "es-toolkit": "^1.39.10", "get-tsconfig": "^4.10.1", "picocolors": "^1.1.1", "prettier-plugin-astro": "^0.14.1", "prettier-plugin-sh": "^0.18.0", "prettier-plugin-tailwindcss": "^0.6.14", "prettier-plugin-toml": "^2.0.6", "remeda": "^2.32.0", "ts-explicit-errors": "^4.0.1", "tsdown": "^0.15.4", "type-fest": "^5.0.1" }, "peerDependencies": { "typescript": "^5.0.0" }, "bin": { "adamhl8-knip": "dist/adamhl8-knip/index", "ts-import-fix": "dist/ts-import-fix/index" } }, "sha512-TguC0t9gwy00pE8+DLuy3dNbf+wb3lVTZUpODLSKpIfnYwX/T//2b5qRXe9BqL5TQnWuJf/GcwQ03fEhWtuVfQ=="],
 
     "@andrewbranch/untar.js": ["@andrewbranch/untar.js@1.0.3", "", {}, "sha512-Jh15/qVmrLGhkKJBdXlK1+9tY4lZruYjsgkDFj08ZmDiWVBLJcqkok7Z0/R0In+i1rScBpJlSvrTS2Lm41Pbnw=="],
 
