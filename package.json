@@ -33,11 +33,11 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@adamhl8/configs": "^0.17.0",
+    "@adamhl8/configs": "^0.17.1",
     "@arethetypeswrong/core": "^0.18.2",
     "@biomejs/biome": "^2.2.4",
     "@types/bun": "^1.2.22",
-    "knip": "^5.63.1",
+    "knip": "^5.64.0",
     "markdown-toc": "^1.2.0",
     "publint": "^0.3.13",
     "tsdown": "^0.15.4",
