@@ -28,7 +28,7 @@ describe("FilterEvaluator", () => {
     })
   })
 
-  const testDataObject = testData[0]
+  const [testDataObject] = testData
 
   describe("comparisons", () => {
     it("should return false for a non-matching comparison", () => {

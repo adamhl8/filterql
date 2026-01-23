@@ -55,7 +55,7 @@ export class FilterEvaluator extends BaseEvaluator {
     // Remove 'i' prefix
     const operator = (isCaseInsensitive ? node.operator.slice(1) : node.operator) as BaseComparisonOperator
 
-    const value = node.value
+    const { value } = node
     const isValidNumber = isNumber(value)
 
     // this check is not specific to any field type, but rather a general rule for numeric operators
