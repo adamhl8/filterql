@@ -1,7 +1,7 @@
-import { comparisonOperators } from "~/lexer/types.ts"
+import { comparisonOperators } from "#/lexer/types.ts"
 
 export type BaseComparisonOperator = (typeof comparisonOperators)[number]
-/** case-insensitive comparison operators */
+/** Case-insensitive comparison operators */
 type IComparisonOperator = `i${BaseComparisonOperator}`
 type ComparisonOperator = BaseComparisonOperator | IComparisonOperator
 

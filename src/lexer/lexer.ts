@@ -1,5 +1,5 @@
-import type { FilterTokenType, OperationTokenType, Token, TokenType } from "~/lexer/types.ts"
-import { comparisonOperators, filterTokenMap, operationTokenMap } from "~/lexer/types.ts"
+import type { FilterTokenType, OperationTokenType, Token, TokenType } from "#/lexer/types.ts"
+import { comparisonOperators, filterTokenMap, operationTokenMap } from "#/lexer/types.ts"
 
 interface CurrentWord {
   word: string
@@ -8,9 +8,11 @@ interface CurrentWord {
 }
 type HandlerFn = (currentWord: CurrentWord, tokenStart: number) => Token | Token[] | undefined
 /**
- * Each token type has a corresponding handler function that returns the Token or `undefined`. A handler can also return an array of Token if it needs to emit multiple tokens.
+ * Each token type has a corresponding handler function that returns the Token or `undefined`. A handler can also return
+ * an array of Token if it needs to emit multiple tokens.
  *
- * Returning `undefined` or an empty array indicates that the current word is not a valid token for the current token type, and the lexer should try the next token type.
+ * Returning `undefined` or an empty array indicates that the current word is not a valid token for the current token
+ * type, and the lexer should try the next token type.
  *
  * Each handler needs to correctly handle an empty `""` string.
  */
@@ -23,7 +25,8 @@ const BACKSLASH_CHAR = "\\"
 export class Lexer {
   private query = ""
   /**
-   * The `this.#position` property should never need to be accessed directly. Use `this.position` to get the current position or `this.advanceBy` to adjust the position.
+   * The `this.#position` property should never need to be accessed directly. Use `this.position` to get the current
+   * position or `this.advanceBy` to adjust the position.
    *
    * This allows us to guarantee that `this.current` is always updated along with `this.#position`.
    */
@@ -32,7 +35,8 @@ export class Lexer {
   private readonly tokens: Token[] = []
 
   /**
-   * We are done lexing the filter once we encounter the first PIPE token, after which we switch to the operation token handlers
+   * We are done lexing the filter once we encounter the first PIPE token, after which we switch to the operation token
+   * handlers
    *
    * This is set to `false` when we encounter the first PIPE token
    */
@@ -173,9 +177,10 @@ export class Lexer {
   }
 
   /**
-   * Returns the current word at `this.position`. This does *not* advance the position.
+   * Returns the current word at `this.position`. This does _not_ advance the position.
    *
-   * More specifically, it returns all characters until whitespace is encountered. In the case of quoted words, it returns all characters until the closing quote is encountered.
+   * More specifically, it returns all characters until whitespace is encountered. In the case of quoted words, it
+   * returns all characters until the closing quote is encountered.
    */
   private getCurrentWord(): CurrentWord {
     let word = ""
@@ -235,10 +240,8 @@ export class Lexer {
   /**
    * FIELD and VALUE words can have operators attached to them.
    *
-   * FIELD words can have left attached operators: LPAREN, RPAREN, NOT
-   * - e.g. '(field)', '!field', '!(field)', '(!field)'
-   * VALUE words can have right attached operators: RPAREN
-   * - e.g. '(field == value)'
+   * FIELD words can have left attached operators: LPAREN, RPAREN, NOT - e.g. '(field)', '!field', '!(field)',
+   * '(!field)' VALUE words can have right attached operators: RPAREN - e.g. '(field == value)'
    */
   private tokenizeAttachedOperators(currentWord: string, tokenStart: number, tokenType: "FIELD" | "VALUE"): Token[] {
     const lparen = filterTokenMap.LPAREN

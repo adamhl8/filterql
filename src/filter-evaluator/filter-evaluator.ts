@@ -1,6 +1,6 @@
-import { BaseEvaluator } from "~/base-evaluator.ts"
-import type { Comparison } from "~/filter-evaluator/types.ts"
-import { isComparableDataValue } from "~/filter-evaluator/types.ts"
+import { BaseEvaluator } from "#/base-evaluator.ts"
+import type { Comparison } from "#/filter-evaluator/types.ts"
+import { isComparableDataValue } from "#/filter-evaluator/types.ts"
 import type {
   BaseComparisonOperator,
   ComparisonNode,
@@ -8,20 +8,16 @@ import type {
   FilterNode,
   LogicalOpNode,
   NotOpNode,
-} from "~/parser/types.ts"
-import type { DataObject } from "~/types.ts"
+} from "#/parser/types.ts"
+import type { DataObject } from "#/types.ts"
 
 export class FilterEvaluator extends BaseEvaluator {
-  /**
-   * Filters the data array by evaluating the AST node against each data object
-   */
+  /** Filters the data array by evaluating the AST node against each data object */
   public filter<T extends DataObject>(data: T[], node: FilterNode): T[] {
     return data.filter((item) => this.evaluateFilter(node, item))
   }
 
-  /**
-   * Evaluate a FilterNode against a data object
-   */
+  /** Evaluate a FilterNode against a data object */
   public evaluateFilter(node: FilterNode, data: DataObject): boolean {
     return this.evaluateExpression(node.expression, data)
   }
@@ -43,9 +39,7 @@ export class FilterEvaluator extends BaseEvaluator {
     }
   }
 
-  /**
-   * Resolves the field/alias and validates it against the schema
-   */
+  /** Resolves the field/alias and validates it against the schema */
   private resolveComparison(node: ComparisonNode): Comparison {
     // field is either the full field name or an alias
     const field = this.resolveField(node.field) ?? node.field

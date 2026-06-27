@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test"
 
-import { FilterEvaluator } from "~/filter-evaluator/filter-evaluator.ts"
-import { parseQuery, testData, testOptions, testSchema } from "~/test-utils.ts"
+import { FilterEvaluator } from "#/filter-evaluator/filter-evaluator.ts"
+import { parseQuery, testData, testOptions, testSchema } from "#/test-utils.ts"
 
 describe("FilterEvaluator", () => {
   describe("filter", () => {

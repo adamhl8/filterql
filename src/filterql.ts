@@ -1,10 +1,10 @@
-import { FilterEvaluator } from "~/filter-evaluator/filter-evaluator.ts"
-import { Lexer } from "~/lexer/lexer.ts"
-import { OperationEvaluator } from "~/operation-evaluator/operation-evaluator.ts"
-import type { OperationMap } from "~/operation-evaluator/types.ts"
-import { Parser } from "~/parser/parser.ts"
-import type { ASTNode, FilterNode, OperationNode } from "~/parser/types.ts"
-import type { DataObject, FilterQLOptions, RequiredFilterQLOptions, Schema } from "~/types.ts"
+import { FilterEvaluator } from "#/filter-evaluator/filter-evaluator.ts"
+import { Lexer } from "#/lexer/lexer.ts"
+import { OperationEvaluator } from "#/operation-evaluator/operation-evaluator.ts"
+import type { OperationMap } from "#/operation-evaluator/types.ts"
+import { Parser } from "#/parser/parser.ts"
+import type { ASTNode, FilterNode, OperationNode } from "#/parser/types.ts"
+import type { DataObject, FilterQLOptions, RequiredFilterQLOptions, Schema } from "#/types.ts"
 
 const DEFAULT_OPTIONS: RequiredFilterQLOptions = { allowUnknownFields: false }
 
@@ -29,9 +29,7 @@ export class FilterQL {
     this.operationEvaluator = new OperationEvaluator(schema, this.options, customOperations)
   }
 
-  /**
-   * Filter and apply operations to a data array with the given query
-   */
+  /** Filter and apply operations to a data array with the given query */
   public query<T extends DataObject>(data: T[], query: string): T[] {
     const ast = this.parse(query)
     const filteredData = this.applyFilter(data, ast.filter)

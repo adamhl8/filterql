@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
 
-import { Lexer } from "~/lexer/lexer.ts"
-import { Parser } from "~/parser/parser.ts"
-import type { ASTNode } from "~/parser/types.ts"
+import { Lexer } from "#/lexer/lexer.ts"
+import { Parser } from "#/parser/parser.ts"
+import type { ASTNode } from "#/parser/types.ts"
 
 describe("parser", () => {
   describe("queries", () => {

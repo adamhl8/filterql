@@ -1,5 +1,5 @@
-import type { RequiredFilterQLOptions, Schema } from "~/types.ts"
-import { FilterQLError } from "~/types.ts"
+import type { RequiredFilterQLOptions, Schema } from "#/types.ts"
+import { FilterQLError } from "#/types.ts"
 
 export abstract class BaseEvaluator {
   public readonly schema: Schema

@@ -1,6 +1,6 @@
-import type { Token } from "~/lexer/types.ts"
-import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "~/parser/types.ts"
-import { isComparisonOperator } from "~/parser/types.ts"
+import type { Token } from "#/lexer/types.ts"
+import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "#/parser/types.ts"
+import { isComparisonOperator } from "#/parser/types.ts"
 
 export class Parser {
   private tokens: Token[] = []
@@ -10,13 +10,9 @@ export class Parser {
   /**
    * Parse tokens into an AST following the grammar:
    *
-   * query := filter ( "|" operation )*
-   * filter := expr
-   * operation := operation_name arg*
-   * expr := and_expr ( "||" and_expr )*
-   * and_expr := term ( "&&" term )*
-   * term := "!" term | "(" expr ")" | comparison
-   * comparison := field operator value | field | "*"
+   * Query := filter ( "|" operation )* filter := expr operation := operation_name arg* expr := and_expr ( "||" and_expr
+   * )* and_expr := term ( "&&" term )* term := "!" term | "(" expr ")" | comparison comparison := field operator value
+   * | field | "*"
    */
   public parse(tokens: Token[]): ASTNode {
     this.tokens = tokens
@@ -43,9 +39,7 @@ export class Parser {
     }
   }
 
-  /**
-   * filter := expr
-   */
+  /** Filter := expr */
   private parseFilter(): FilterNode {
     const expression = this.parseExpression()
     return {
@@ -54,9 +48,7 @@ export class Parser {
     }
   }
 
-  /**
-   * expr := and_expr ( "||" and_expr )*
-   */
+  /** Expr := and_expr ( "||" and_expr )* */
   private parseExpression(): ExpressionNode {
     let left = this.parseAndExpression()
 
@@ -73,9 +65,7 @@ export class Parser {
     return left
   }
 
-  /**
-   * and_expr := term ( "&&" term )*
-   */
+  /** And_expr := term ( "&&" term )* */
   private parseAndExpression(): ExpressionNode {
     let left = this.parseTerm()
 
@@ -92,9 +82,7 @@ export class Parser {
     return left
   }
 
-  /**
-   * term := "!" term | "(" expr ")" | comparison
-   */
+  /** Term := "!" term | "(" expr ")" | comparison */
   private parseTerm(): ExpressionNode {
     if (this.current().type === "NOT") {
       this.advance() // consume !
@@ -122,10 +110,7 @@ export class Parser {
     return this.parseComparison()
   }
 
-  /**
-   * comparison := field operator value | field
-   * Note: standalone field is shorthand for field == true
-   */
+  /** Comparison := field operator value | field Note: standalone field is shorthand for field == true */
   private parseComparison(): ComparisonNode {
     const fieldToken = this.current()
     if (fieldToken.type !== "FIELD")
@@ -147,9 +132,7 @@ export class Parser {
     return { type: "comparison", field: fieldToken.value, operator: operatorToken.value, value: valueToken.value }
   }
 
-  /**
-   * Parse operations: ( "|" operation )*
-   */
+  /** Parse operations: ( "|" operation )* */
   private parseOperations(): OperationNode[] {
     const operations: OperationNode[] = []
 
@@ -162,9 +145,7 @@ export class Parser {
     return operations
   }
 
-  /**
-   * operation := operation_name arg*
-   */
+  /** Operation := operation_name arg* */
   private parseOperation(): OperationNode {
     const operationNameToken = this.current()
     if (operationNameToken.type !== "OPERATION_NAME")
