@@ -1,9 +1,7 @@
-declare module "bun:test" {
-  interface Matchers {
-    toThrowErrorWithNameAndMessage(expectedName: string, expectedMessage: string): void
-  }
+import { Matchers } from "vitest"
 
-  interface AsymmetricMatchers {
-    toThrowErrorWithNameAndMessage(expectedName: string, expectedMessage: string): void
+declare module "vitest" {
+  interface Matchers {
+    toThrowErrorWithNameAndMessage: (expectedName: string, expectedMessage: string) => void
   }
 }

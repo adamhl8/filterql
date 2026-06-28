@@ -1,6 +1,14 @@
 import type { FilterTokenType, OperationTokenType, Token, TokenType } from "#/lexer/types.ts"
 import { comparisonOperators, filterTokenMap, operationTokenMap } from "#/lexer/types.ts"
 
+class LexerError extends Error {
+  public constructor(message: string) {
+    super(message)
+    Object.setPrototypeOf(this, new.target.prototype)
+    this.name = "LexerError"
+  }
+}
+
 interface CurrentWord {
   word: string
   rawWord: string
@@ -18,7 +26,7 @@ type HandlerFn = (currentWord: CurrentWord, tokenStart: number) => Token | Token
  */
 type TokenHandlers<T extends string = string> = Record<T, HandlerFn>
 
-const WHITESPACE = /\s/
+const WHITESPACE = /\s/v
 const QUOTE_CHAR = '"'
 const BACKSLASH_CHAR = "\\"
 
@@ -80,11 +88,9 @@ export class Lexer {
       // if the value is an empty quoted value `""`, the word will be empty
       if (!word && isQuoted) return { type: "VALUE", value: "", position: tokenStart }
 
-      if (!word) return
-
       // if the value is a quoted value, we don't need to split off attached operators
       if (isQuoted) return { type: "VALUE", value: word, position: tokenStart }
-      return this.tokenizeAttachedOperators(word, tokenStart, "VALUE")
+      return Lexer.tokenizeAttachedOperators(word, tokenStart, "VALUE")
     },
     COMPARISON_OPERATOR: ({ word }, tokenStart) => {
       if (!word) return
@@ -94,11 +100,8 @@ export class Lexer {
       // handle case-insensitive operator
       if (word.startsWith("i")) comparisonOperator = comparisonOperator.slice(1)
 
-      for (const op of comparisonOperators) {
-        if (comparisonOperator === op) {
-          return { type: "COMPARISON_OPERATOR", value: word, position: tokenStart }
-        }
-      }
+      for (const op of comparisonOperators)
+        if (comparisonOperator === op) return { type: "COMPARISON_OPERATOR", value: word, position: tokenStart }
 
       return
     },
@@ -111,7 +114,7 @@ export class Lexer {
     FIELD: ({ word }, tokenStart) => {
       if (!word) return
 
-      return this.tokenizeAttachedOperators(word, tokenStart, "FIELD")
+      return Lexer.tokenizeAttachedOperators(word, tokenStart, "FIELD")
     },
   } satisfies TokenHandlers<FilterTokenType>
 
@@ -189,6 +192,7 @@ export class Lexer {
     // because we don't increment the position in this function, we need to separately keep track of the cursor position in the given word and base the logic on that position
     const wordPosition = () => this.position + moveCount
 
+    const current = () => this.query[wordPosition()] ?? ""
     // In quoted words, the opening quote, closing quote, and escape sequence backslashes are not included in `word`.
     // The `rawWord` represents the whole quoted word as it appears in the query. For unquoted words, `rawWord` will be equal to `word`.
     // Every time we move along the quoted word, we also want to append to `rawWord`.
@@ -196,8 +200,7 @@ export class Lexer {
       rawWord += current()
       moveCount++
     }
-    const current = () => this.query[wordPosition()] ?? ""
-    const currentIsWhitespace = () => this.isWhitespace(current())
+    const currentIsWhitespace = () => Lexer.isWhitespace(current())
     const isEOF = () => wordPosition() >= this.query.length
 
     if (current() !== QUOTE_CHAR) {
@@ -215,13 +218,12 @@ export class Lexer {
       if (current() === BACKSLASH_CHAR) {
         // handle escape sequences
         moveCursor() // skip backslash
-        if (current() === QUOTE_CHAR) {
-          word += current()
-          moveCursor()
-        } else {
-          word += `${BACKSLASH_CHAR}${current()}` // if the backslash wasn't the start of an escape sequence, give it back to the word
-          moveCursor()
-        }
+
+        // if the backslash wasn't the start of an escape sequence, give it back to the word
+        const charToAdd = current() === QUOTE_CHAR ? current() : `${BACKSLASH_CHAR}${current()}`
+        word += charToAdd
+        moveCursor()
+
         continue
       }
 
@@ -243,7 +245,11 @@ export class Lexer {
    * FIELD words can have left attached operators: LPAREN, RPAREN, NOT - e.g. '(field)', '!field', '!(field)',
    * '(!field)' VALUE words can have right attached operators: RPAREN - e.g. '(field == value)'
    */
-  private tokenizeAttachedOperators(currentWord: string, tokenStart: number, tokenType: "FIELD" | "VALUE"): Token[] {
+  private static tokenizeAttachedOperators(
+    currentWord: string,
+    tokenStart: number,
+    tokenType: "FIELD" | "VALUE",
+  ): Token[] {
     const lparen = filterTokenMap.LPAREN
     const not = filterTokenMap.NOT
     const rparen = filterTokenMap.RPAREN
@@ -280,7 +286,8 @@ export class Lexer {
       rightAttachedTokens.unshift({ type, value, position: wordStart + word.length }) // we handle rightAttachedOperators in reverse, so we unshift instead of push so they're in the right order
     }
 
-    const reversedWord = [...word].reverse().join("")
+    // oxlint-disable-next-line unicorn/prefer-spread - using Array.from() for because we're splitting a string
+    const reversedWord = Array.from(word).toReversed().join("")
     for (const char of reversedWord) {
       if (char === rparen) {
         handleRightAttachedOperators("RPAREN", rparen)
@@ -289,8 +296,7 @@ export class Lexer {
       break // if we hit a character that is not a rightAttachedOperator, the rest of the word belongs to the field/value
     }
 
-    tokens.push({ type: tokenType, value: word, position: wordStart }) // push the word without attached operators
-    tokens.push(...rightAttachedTokens)
+    tokens.push({ type: tokenType, value: word, position: wordStart }, ...rightAttachedTokens) // push the word without attached operators
 
     return tokens
   }
@@ -300,12 +306,10 @@ export class Lexer {
   }
 
   private skipWhitespace(): void {
-    while (!this.isEOF() && this.isWhitespace(this.current)) {
-      this.advanceBy(1)
-    }
+    while (!this.isEOF() && Lexer.isWhitespace(this.current)) this.advanceBy(1)
   }
 
-  private isWhitespace(s: string): boolean {
+  private static isWhitespace(s: string): boolean {
     return WHITESPACE.test(s)
   }
 
@@ -321,13 +325,5 @@ export class Lexer {
   private isPreviousToken(tokenType: TokenType): boolean {
     const previousToken = this.tokens.at(-1)
     return previousToken?.type === tokenType
-  }
-}
-
-class LexerError extends Error {
-  public constructor(message: string) {
-    super(message)
-    Object.setPrototypeOf(this, new.target.prototype)
-    this.name = "LexerError"
   }
 }

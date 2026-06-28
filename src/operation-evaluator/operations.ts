@@ -15,17 +15,18 @@ export const defaultOperations: OperationMap = {
     if (options.allowUnknownFields && !resolvedField) resolvedField = field
     if (!resolvedField) throw new Error(`Unknown field '${field}' for operation 'SORT'`)
 
-    if (direction !== "asc" && direction !== "desc")
+    if (direction !== "asc" && direction !== "desc") {
       throw new Error(
         `Invalid direction argument '${direction}' for operation 'SORT': should be either 'asc' or 'desc'`,
       )
+    }
 
     const collator = new Intl.Collator(undefined, { ignorePunctuation: true, sensitivity: "base", numeric: true })
     const sortedData = data.toSorted((a, b) => {
       const aValue = a[resolvedField] ?? ""
       const bValue = b[resolvedField] ?? ""
-      const aString = typeof aValue === "string" ? aValue : aValue.toString()
-      const bString = typeof bValue === "string" ? bValue : bValue.toString()
+      const aString = typeof aValue === "string" ? aValue : JSON.stringify(aValue)
+      const bString = typeof bValue === "string" ? bValue : JSON.stringify(bValue)
       if (direction === "desc") return collator.compare(bString, aString)
       return collator.compare(aString, bString)
     })

@@ -1,6 +1,7 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 
 import { Lexer } from "#/lexer/lexer.ts"
+import type { Token } from "#/lexer/types.ts"
 import { Parser } from "#/parser/parser.ts"
 import type { ASTNode } from "#/parser/types.ts"
 
@@ -24,7 +25,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
 
     it("should parse empty query as match-all filter", () => {
@@ -42,7 +43,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
 
     it("should parse field shorthand", () => {
@@ -63,7 +64,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
 
     it("should parse complex expression", () => {
@@ -117,7 +118,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
 
     describe("logical operations", () => {
@@ -139,7 +140,7 @@ describe("parser", () => {
         }
 
         const result = new Parser().parse(new Lexer().tokenize(query))
-        expect(result).toEqual(expected)
+        expect(result).toStrictEqual(expected)
       })
 
       it("should parse NOT expression", () => {
@@ -163,7 +164,7 @@ describe("parser", () => {
         }
 
         const result = new Parser().parse(new Lexer().tokenize(query))
-        expect(result).toEqual(expected)
+        expect(result).toStrictEqual(expected)
       })
 
       it("should parse AND expression", () => {
@@ -193,7 +194,7 @@ describe("parser", () => {
         }
 
         const result = new Parser().parse(new Lexer().tokenize(query))
-        expect(result).toEqual(expected)
+        expect(result).toStrictEqual(expected)
       })
 
       it("should parse OR expression", () => {
@@ -223,7 +224,7 @@ describe("parser", () => {
         }
 
         const result = new Parser().parse(new Lexer().tokenize(query))
-        expect(result).toEqual(expected)
+        expect(result).toStrictEqual(expected)
       })
 
       it("should handle operator precedence", () => {
@@ -262,7 +263,7 @@ describe("parser", () => {
         }
 
         const result = new Parser().parse(new Lexer().tokenize(query))
-        expect(result).toEqual(expected)
+        expect(result).toStrictEqual(expected)
       })
     })
 
@@ -281,7 +282,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
   })
 
@@ -310,7 +311,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
 
     it("should parse multiple operations", () => {
@@ -342,7 +343,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
 
     it("should parse operation with no arguments", () => {
@@ -369,7 +370,7 @@ describe("parser", () => {
       }
 
       const result = new Parser().parse(new Lexer().tokenize(query))
-      expect(result).toEqual(expected)
+      expect(result).toStrictEqual(expected)
     })
   })
 
@@ -474,6 +475,32 @@ describe("parser", () => {
         expect(() => new Parser().parse(new Lexer().tokenize(query))).toThrowErrorWithNameAndMessage(
           "ParserError",
           "Expected field name but found '|' at position 0",
+        )
+      })
+    })
+
+    describe("malformed tokens", () => {
+      it("should throw when given no tokens", () => {
+        expect(() => new Parser().parse([])).toThrowErrorWithNameAndMessage("ParserError", "current token is undefined")
+      })
+
+      it("should throw when a token is missing mid-stream", () => {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion - testing error handling for malformed tokens
+        const tokens: Token[] = [{ type: "FIELD", value: "x", position: 0 }, undefined as unknown as Token]
+
+        expect(() => new Parser().parse(tokens)).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Unexpected end of tokens",
+        )
+      })
+
+      it("should throw on tokens missing the EOF token", () => {
+        // the lexer always appends EOF; without it, advance() stays on the final token rather than going out of bounds
+        const tokens: Token[] = [{ type: "MATCH_ALL", value: "*", position: 0 }]
+
+        expect(() => new Parser().parse(tokens)).toThrowErrorWithNameAndMessage(
+          "ParserError",
+          "Unexpected token '*' at position 0",
         )
       })
     })

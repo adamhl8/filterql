@@ -2,6 +2,14 @@ import type { Token } from "#/lexer/types.ts"
 import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "#/parser/types.ts"
 import { isComparisonOperator } from "#/parser/types.ts"
 
+class ParserError extends Error {
+  public constructor(message: string) {
+    super(message)
+    Object.setPrototypeOf(this, new.target.prototype)
+    this.name = "ParserError"
+  }
+}
+
 export class Parser {
   private tokens: Token[] = []
   private position = 0
@@ -16,15 +24,17 @@ export class Parser {
    */
   public parse(tokens: Token[]): ASTNode {
     this.tokens = tokens
+    // oxlint-disable-next-line prefer-destructuring
     this.#current = this.tokens[0]
 
     // an empty query is treated as a match-all filter
-    if (this.current().type === "EOF")
+    if (this.current().type === "EOF") {
       return {
         type: "query",
         filter: { type: "filter", expression: { type: "match_all" } },
         operations: [],
       }
+    }
 
     const filter = this.parseFilter()
     const operations = this.parseOperations()
@@ -148,10 +158,11 @@ export class Parser {
   /** Operation := operation_name arg* */
   private parseOperation(): OperationNode {
     const operationNameToken = this.current()
-    if (operationNameToken.type !== "OPERATION_NAME")
+    if (operationNameToken.type !== "OPERATION_NAME") {
       throw new ParserError(
         `Expected operation name but found '${operationNameToken.value}' at position ${operationNameToken.position}`,
       )
+    }
     this.advance()
 
     const args: string[] = []
@@ -179,13 +190,5 @@ export class Parser {
       if (!token) throw new ParserError("Unexpected end of tokens")
       this.#current = token
     }
-  }
-}
-
-class ParserError extends Error {
-  public constructor(message: string) {
-    super(message)
-    Object.setPrototypeOf(this, new.target.prototype)
-    this.name = "ParserError"
   }
 }

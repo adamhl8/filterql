@@ -1,16 +1,17 @@
-import { expect } from "bun:test"
+import { expect } from "vitest"
 
 expect.extend({
-  toThrowErrorWithNameAndMessage(callback, expectedName, expectedMessage) {
+  toThrowErrorWithNameAndMessage: (callback: () => void, expectedName, expectedMessage) => {
     if (typeof callback !== "function") throw new Error("Expected a function as the first argument")
     let caughtError: Error | undefined
     try {
+      // oxlint-disable-next-line promise/prefer-await-to-callbacks
       callback()
     } catch (error) {
-      caughtError = error as Error
+      caughtError = error instanceof Error ? error : new Error(String(error))
     }
 
-    const pass = caughtError?.name === expectedName && caughtError?.message === expectedMessage
+    const pass = caughtError?.name === expectedName && caughtError.message === expectedMessage
 
     if (pass) {
       return {

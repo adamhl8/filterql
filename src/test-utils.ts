@@ -36,5 +36,5 @@ export const testData = [
   { title: "The Matrix Reloaded", year: 2003, monitored: false, rating: 7.2, genre: "Action", status: "Missing" },
   { title: "Inception", year: 2010, monitored: true, rating: 8.8, genre: "Thriller", status: "Available" },
   { title: "Interstellar", year: 2014, monitored: true, rating: 8.6, genre: "Drama", status: "Downloaded" },
-  { title: "The Dark Knight", year: 2008, monitored: false, rating: 9.0, genre: "Action", status: "Available" },
+  { title: "The Dark Knight", year: 2008, monitored: false, rating: 9, genre: "Action", status: "Available" },
 ] as const satisfies DataObject[]

@@ -11,6 +11,21 @@ import type {
 } from "#/parser/types.ts"
 import type { DataObject } from "#/types.ts"
 
+class FilterEvaluatorError extends Error {
+  public constructor(message: string) {
+    super(message)
+    Object.setPrototypeOf(this, new.target.prototype)
+    this.name = "FilterEvaluatorError"
+  }
+}
+
+const isNumber = (num: string): boolean => {
+  const parsedNumber = Number(num)
+  return !Number.isNaN(parsedNumber)
+}
+
+const isEmpty = (val: unknown) => val === "" || val === undefined || val === null
+
 export class FilterEvaluator extends BaseEvaluator {
   /** Filters the data array by evaluating the AST node against each data object */
   public filter<T extends DataObject>(data: T[], node: FilterNode): T[] {
@@ -23,20 +38,11 @@ export class FilterEvaluator extends BaseEvaluator {
   }
 
   private evaluateExpression(node: ExpressionNode, data: DataObject): boolean {
-    switch (node.type) {
-      case "match_all":
-        return true
-      case "comparison":
-        return this.evaluateComparison(node, data)
-      case "and":
-        return this.evaluateLogical(node, data)
-      case "or":
-        return this.evaluateLogical(node, data)
-      case "not":
-        return this.evaluateNot(node, data)
-      default:
-        throw new FilterEvaluatorError(`Unexpected node '${JSON.stringify(node)}'`)
-    }
+    if (node.type === "match_all") return true
+    else if (node.type === "comparison") return this.evaluateComparison(node, data)
+    else if (node.type === "not") return this.evaluateNot(node, data)
+    // `node.type` is either "and" or "or"
+    return this.evaluateLogical(node, data)
   }
 
   /** Resolves the field/alias and validates it against the schema */
@@ -47,6 +53,7 @@ export class FilterEvaluator extends BaseEvaluator {
 
     const isCaseInsensitive = node.operator.startsWith("i")
     // Remove 'i' prefix
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion - A ComparisonOperator without the 'i' prefix is guaranteed to be a valid BaseComparisonOperator
     const operator = (isCaseInsensitive ? node.operator.slice(1) : node.operator) as BaseComparisonOperator
 
     const { value } = node
@@ -54,14 +61,15 @@ export class FilterEvaluator extends BaseEvaluator {
 
     // this check is not specific to any field type, but rather a general rule for numeric operators
     const isNumericOperator = [">=", "<="].includes(operator)
-    if (isNumericOperator && !isValidNumber)
+    if (isNumericOperator && !isValidNumber) {
       throw new FilterEvaluatorError(
         `Invalid value '${value}' for field '${field}': the '${operator}' operator must be used with a number`,
       )
+    }
 
     if (!fieldConfig) {
       // if the field isn't in the schema and allowUnknownFields is true, give the field back as is
-      if (this.options.allowUnknownFields) return { field, operator, value, isCaseInsensitive }
+      if (this.options.allowUnknownFields) return { field, isCaseInsensitive, operator, value }
       throw new FilterEvaluatorError(`Unknown field '${field}'`)
     }
 
@@ -78,7 +86,7 @@ export class FilterEvaluator extends BaseEvaluator {
         throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${type})`)
     }
 
-    return { field, operator, value, isCaseInsensitive }
+    return { field, isCaseInsensitive, operator, value }
   }
 
   private evaluateComparison(node: ComparisonNode, data: DataObject): boolean {
@@ -92,7 +100,6 @@ export class FilterEvaluator extends BaseEvaluator {
     // we only want to compare against string, number, boolean, undefined, or null values
     if (!isComparableDataValue(dataValue)) return false
 
-    const isEmpty = (val: unknown) => val === "" || val === undefined || val === null
     // if the comparison value is "", it's an empty check
     if (value === "") {
       if (operator === "==") return isEmpty(dataValue)
@@ -129,39 +136,18 @@ export class FilterEvaluator extends BaseEvaluator {
     const valueNumber = Number(value)
     const dataValueNumber = Number(dataValue)
     if (operator === ">=") return dataValueNumber >= valueNumber
-    if (operator === "<=") return dataValueNumber <= valueNumber
-
-    throw new FilterEvaluatorError(`Unexpected comparison operator '${operator}'`)
+    // operator === "<="
+    return dataValueNumber <= valueNumber
   }
 
   private evaluateLogical(node: LogicalOpNode, data: DataObject): boolean {
     const leftResult = this.evaluateExpression(node.left, data)
     const rightResult = this.evaluateExpression(node.right, data)
 
-    switch (node.type) {
-      case "and":
-        return leftResult && rightResult
-      case "or":
-        return leftResult || rightResult
-      default:
-        throw new FilterEvaluatorError(`Unexpected logical operator '${node.type}'`)
-    }
+    return node.type === "and" ? leftResult && rightResult : leftResult || rightResult
   }
 
   private evaluateNot(node: NotOpNode, data: DataObject): boolean {
     return !this.evaluateExpression(node.operand, data)
   }
-}
-
-class FilterEvaluatorError extends Error {
-  public constructor(message: string) {
-    super(message)
-    Object.setPrototypeOf(this, new.target.prototype)
-    this.name = "FilterEvaluatorError"
-  }
-}
-
-function isNumber(num: string) {
-  const parsedNumber = Number(num)
-  return !Number.isNaN(parsedNumber)
 }

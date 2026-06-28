@@ -9,9 +9,7 @@ export const comparisonOperators = [
   "<=", // less than or equal to
 ] as const
 
-/**
- * A map of filter token types to their corresponding characters/strings.
- */
+/** A map of filter token types to their corresponding characters/strings. */
 export const filterTokenMap = {
   LPAREN: "(",
   RPAREN: ")",

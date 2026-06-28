@@ -4,16 +4,26 @@ import type { OperationMap } from "#/operation-evaluator/types.ts"
 import type { OperationNode } from "#/parser/types.ts"
 import type { DataObject, RequiredFilterQLOptions, Schema } from "#/types.ts"
 
+class OperationEvaluatorError extends Error {
+  public constructor(message: string) {
+    super(message)
+    Object.setPrototypeOf(this, new.target.prototype)
+    this.name = "OperationEvaluatorError"
+  }
+}
+
 export class OperationEvaluator extends BaseEvaluator {
   private readonly operationMap: OperationMap
 
   public constructor(schema: Schema, options: RequiredFilterQLOptions, customOperations?: OperationMap) {
     super(schema, options)
 
-    if (customOperations)
-      for (const key of Object.keys(customOperations))
+    if (customOperations) {
+      for (const key of Object.keys(customOperations)) {
         if (key !== key.toUpperCase())
           throw new OperationEvaluatorError(`Custom operation key '${key}' must be uppercase`)
+      }
+    }
 
     this.operationMap = { ...defaultOperations, ...customOperations }
   }
@@ -32,13 +42,5 @@ export class OperationEvaluator extends BaseEvaluator {
     }
 
     return newData
-  }
-}
-
-class OperationEvaluatorError extends Error {
-  public constructor(message: string) {
-    super(message)
-    Object.setPrototypeOf(this, new.target.prototype)
-    this.name = "OperationEvaluatorError"
   }
 }

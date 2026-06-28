@@ -5,9 +5,8 @@ export type BaseComparisonOperator = (typeof comparisonOperators)[number]
 type IComparisonOperator = `i${BaseComparisonOperator}`
 type ComparisonOperator = BaseComparisonOperator | IComparisonOperator
 
-const allComparisonOperators = [...comparisonOperators, ...comparisonOperators.map((op) => `i${op}`)]
-export const isComparisonOperator = (value: string): value is ComparisonOperator =>
-  allComparisonOperators.includes(value)
+const allComparisonOperators = new Set([...comparisonOperators, ...comparisonOperators.map((op) => `i${op}`)])
+export const isComparisonOperator = (value: string): value is ComparisonOperator => allComparisonOperators.has(value)
 
 export type ASTNode = QueryNode
 

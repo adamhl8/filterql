@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 
 import { FilterQL } from "#/filterql.ts"
 import type { OperationMap } from "#/operation-evaluator/types.ts"
@@ -11,10 +11,10 @@ describe("FilterQL", () => {
       const result = filterql.query(testData, "rating >= 8.5 | SORT year desc")
 
       expect(result).toHaveLength(4)
-      expect(result.map((r) => ({ title: r.title, year: r.year, rating: r.rating }))).toEqual([
+      expect(result.map((r) => ({ title: r.title, year: r.year, rating: r.rating }))).toStrictEqual([
         { title: "Interstellar", year: 2014, rating: 8.6 },
         { title: "Inception", year: 2010, rating: 8.8 },
-        { title: "The Dark Knight", year: 2008, rating: 9.0 },
+        { title: "The Dark Knight", year: 2008, rating: 9 },
         { title: "The Matrix", year: 1999, rating: 8.7 },
       ])
     })
@@ -24,7 +24,7 @@ describe("FilterQL", () => {
       const result = filterql.query(testData, "* | SORT rating desc | LIMIT 3")
 
       expect(result).toHaveLength(3)
-      expect(result.map((r) => r.title)).toEqual(["The Dark Knight", "Inception", "The Matrix"])
+      expect(result.map((r) => r.title)).toStrictEqual(["The Dark Knight", "Inception", "The Matrix"])
     })
 
     it("should handle custom operation", () => {
@@ -36,7 +36,7 @@ describe("FilterQL", () => {
       const result = filterql.query(testData, "t == Inception | DOUBLE")
 
       expect(result).toHaveLength(2)
-      expect(result.every((r) => r.title === "Inception")).toBeTrue()
+      expect(result.every((r) => r.title === "Inception")).toBe(true)
     })
   })
 })

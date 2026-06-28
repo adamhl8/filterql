@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 
 import { OperationEvaluator } from "#/operation-evaluator/operation-evaluator.ts"
 import type { OperationFn } from "#/operation-evaluator/types.ts"
@@ -39,7 +39,7 @@ describe("OperationEvaluator", () => {
         const node = parseQuery("* | SORT title")
         const result = operationEvaluator.apply(testData, node.operations)
         expect(result).toHaveLength(5)
-        expect(result.map((r) => r.title)).toEqual([
+        expect(result.map((r) => r.title)).toStrictEqual([
           "Inception",
           "Interstellar",
           "The Dark Knight",
@@ -53,7 +53,7 @@ describe("OperationEvaluator", () => {
         const node = parseQuery("* | SORT t")
         const result = operationEvaluator.apply(testData, node.operations)
         expect(result).toHaveLength(5)
-        expect(result.map((r) => r.title)).toEqual([
+        expect(result.map((r) => r.title)).toStrictEqual([
           "Inception",
           "Interstellar",
           "The Dark Knight",
@@ -67,7 +67,7 @@ describe("OperationEvaluator", () => {
         const node = parseQuery("* | SORT year")
         const result = operationEvaluator.apply(testData, node.operations)
         expect(result).toHaveLength(5)
-        expect(result.map((r) => r.year)).toEqual([1999, 2003, 2008, 2010, 2014])
+        expect(result.map((r) => r.year)).toStrictEqual([1999, 2003, 2008, 2010, 2014])
       })
 
       it("should sort the data by rating", () => {
@@ -75,7 +75,7 @@ describe("OperationEvaluator", () => {
         const node = parseQuery("* | SORT rating")
         const result = operationEvaluator.apply(testData, node.operations)
         expect(result).toHaveLength(5)
-        expect(result.map((r) => r.rating)).toEqual([7.2, 8.6, 8.7, 8.8, 9.0])
+        expect(result.map((r) => r.rating)).toStrictEqual([7.2, 8.6, 8.7, 8.8, 9])
       })
 
       it("should sort the data by title in descending order", () => {
@@ -83,13 +83,34 @@ describe("OperationEvaluator", () => {
         const node = parseQuery("* | SORT title desc")
         const result = operationEvaluator.apply(testData, node.operations)
         expect(result).toHaveLength(5)
-        expect(result.map((r) => r.title)).toEqual([
+        expect(result.map((r) => r.title)).toStrictEqual([
           "The Matrix Reloaded",
           "The Matrix",
           "The Dark Knight",
           "Interstellar",
           "Inception",
         ])
+      })
+
+      it("should sort to same order when the field does not exist in the data", () => {
+        const operationEvaluator = new OperationEvaluator(testSchema, testOptions)
+        const node = parseQuery("* | SORT foo")
+        const result = operationEvaluator.apply(testData, node.operations)
+        expect(result).toHaveLength(5)
+        expect(result.map((r) => r.title)).toStrictEqual([
+          "The Matrix",
+          "The Matrix Reloaded",
+          "Inception",
+          "Interstellar",
+          "The Dark Knight",
+        ])
+      })
+
+      it("should not throw on unknown field when 'allowUnknownFields' is true", () => {
+        const operationEvaluator = new OperationEvaluator(testSchema, { allowUnknownFields: true })
+        const node = parseQuery("* | SORT unknownField")
+        const result = operationEvaluator.apply(testData, node.operations)
+        expect(result).toHaveLength(5)
       })
 
       it("should throw on unknown field", () => {
@@ -114,21 +135,23 @@ describe("OperationEvaluator", () => {
 
   describe("custom operations", () => {
     it("should handle overridden default operation", () => {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion unicorn/consistent-function-scoping
       const customLimit: OperationFn = <T>() => [{ title: "custom limit" }] as T[]
       const operationEvaluator = new OperationEvaluator(testSchema, testOptions, { LIMIT: customLimit })
       const node = parseQuery("* | LIMIT")
       const result = operationEvaluator.apply(testData, node.operations)
       expect(result).toHaveLength(1)
-      expect(result[0]?.title).toBe("custom limit" as "The Matrix") // typescript is expecting the title to be one of the titles in the data
+      expect(result[0]?.title).toBe("custom limit")
     })
 
     it("should handle custom operation", () => {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion unicorn/consistent-function-scoping
       const MYOP: OperationFn = <T>() => [{ title: "my op" }, { title: "my op2" }] as T[]
       const operationEvaluator = new OperationEvaluator(testSchema, testOptions, { MYOP })
       const node = parseQuery("* | MYOP | LIMIT 1")
       const result = operationEvaluator.apply(testData, node.operations)
       expect(result).toHaveLength(1)
-      expect(result[0]?.title).toBe("my op" as "The Matrix")
+      expect(result[0]?.title).toBe("my op")
     })
 
     it("should throw on invalid direction argument", () => {

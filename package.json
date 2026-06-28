@@ -1,6 +1,6 @@
 {
   "name": "filterql",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "A tiny query language for filtering structured data",
   "keywords": [
     "data",
@@ -46,10 +46,11 @@
     "bump-deps": "rm -f lock.yaml && nub update -L"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.20.1",
+    "@adamhl8/configs": "^0.21.1",
     "@arethetypeswrong/core": "^0.18.4",
     "@types/node": "^26.0.1",
-    "knip": "^6.22.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "knip": "^6.23.0",
     "markdown-toc": "^1.2.0",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",

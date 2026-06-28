@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 
 import { Lexer } from "#/lexer/lexer.ts"
 import type { Token } from "#/lexer/types.ts"
@@ -18,7 +18,7 @@ describe("Lexer", () => {
       const expected: Token[] = [{ type: "FIELD", value: "field", position: 0 }, createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle syntax in fields/values", () => {
@@ -27,7 +27,7 @@ describe("Lexer", () => {
       const expected: Token[] = [{ type: "FIELD", value: "foo|f(i)e!l&&d||", position: 0 }, createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle comparison without whitespace", () => {
@@ -36,7 +36,7 @@ describe("Lexer", () => {
       const expected: Token[] = [{ type: "FIELD", value: "field==value", position: 0 }, createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle field and comparison operator", () => {
@@ -49,7 +49,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle comparison operator and value", () => {
@@ -62,7 +62,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle comparison", () => {
@@ -76,7 +76,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle multiple comparisons", () => {
@@ -94,7 +94,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle case-insensitive comparison", () => {
@@ -108,7 +108,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle quoted value", () => {
@@ -122,7 +122,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle quoted words", () => {
@@ -136,7 +136,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle empty quoted value", () => {
@@ -150,21 +150,21 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle quoted value with escape sequences", () => {
-      const query = 'field == "value \\"quoted\\" \\slash \\\\doubleslash"' // 'field == "value \"quoted\" \slash \\doubleslash"'
+      const query = String.raw`field == "value \"quoted\" \slash \\doubleslash"`
 
       const expected: Token[] = [
         { type: "FIELD", value: "field", position: 0 },
         { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
-        { type: "VALUE", value: 'value "quoted" \\slash \\\\doubleslash', position: 9 },
+        { type: "VALUE", value: String.raw`value "quoted" \slash \\doubleslash`, position: 9 },
         createEofToken(query),
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle extra whitespace", () => {
@@ -178,7 +178,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle empty query", () => {
@@ -187,7 +187,7 @@ describe("Lexer", () => {
       const expected: Token[] = [createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle whitespace-only query", () => {
@@ -196,73 +196,79 @@ describe("Lexer", () => {
       const expected: Token[] = [createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle all comparison operators", () => {
       const query = comparisonOperators.map((op) => `field ${op} value`).join(" && ")
 
       const expectedTokens: Token[] = comparisonOperators
-        .flatMap((op, index) => [
-          {
-            type: "FIELD",
-            value: "field",
-            position: index * 18,
-          },
-          {
-            type: "COMPARISON_OPERATOR",
-            value: op,
-            position: index * 18 + 6,
-          },
-          {
-            type: "VALUE",
-            value: "value",
-            position: index * 18 + 9,
-          },
-          {
-            type: "AND",
-            value: "&&",
-            position: index * 18 + 15,
-          },
-        ])
-        .slice(0, -1) as Token[] // get rid of the last AND token
+        .flatMap(
+          (op, index) =>
+            [
+              {
+                type: "FIELD",
+                value: "field",
+                position: index * 18,
+              },
+              {
+                type: "COMPARISON_OPERATOR",
+                value: op,
+                position: index * 18 + 6,
+              },
+              {
+                type: "VALUE",
+                value: "value",
+                position: index * 18 + 9,
+              },
+              {
+                type: "AND",
+                value: "&&",
+                position: index * 18 + 15,
+              },
+            ] satisfies Token[],
+        )
+        .slice(0, -1) // get rid of the last AND token
       const expected: Token[] = [...expectedTokens, createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle all case-insensitive comparison operators", () => {
       const query = comparisonOperators.map((op) => `field i${op} value`).join(" && ")
 
       const expectedTokens: Token[] = comparisonOperators
-        .flatMap((op, index) => [
-          {
-            type: "FIELD",
-            value: "field",
-            position: index * 19,
-          },
-          {
-            type: "COMPARISON_OPERATOR",
-            value: `i${op}`,
-            position: index * 19 + 6,
-          },
-          {
-            type: "VALUE",
-            value: "value",
-            position: index * 19 + 10,
-          },
-          {
-            type: "AND",
-            value: "&&",
-            position: index * 19 + 16,
-          },
-        ])
-        .slice(0, -1) as Token[] // get rid of the last AND token
+        .flatMap(
+          (op, index) =>
+            [
+              {
+                type: "FIELD",
+                value: "field",
+                position: index * 19,
+              },
+              {
+                type: "COMPARISON_OPERATOR",
+                value: `i${op}`,
+                position: index * 19 + 6,
+              },
+              {
+                type: "VALUE",
+                value: "value",
+                position: index * 19 + 10,
+              },
+              {
+                type: "AND",
+                value: "&&",
+                position: index * 19 + 16,
+              },
+            ] satisfies Token[],
+        )
+        .slice(0, -1) // get rid of the last AND token
       const expected: Token[] = [...expectedTokens, createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
   })
 
@@ -277,7 +283,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle logical operators", () => {
@@ -291,7 +297,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
   })
 
@@ -302,7 +308,7 @@ describe("Lexer", () => {
       const expected: Token[] = [{ type: "MATCH_ALL", value: "*", position: 0 }, createEofToken(query)]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle match-all with comparisons", () => {
@@ -318,7 +324,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should only tokenize as MATCH_ALL when used in field position", () => {
@@ -332,7 +338,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
   })
 
@@ -348,7 +354,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle NOT attached to fields", () => {
@@ -361,7 +367,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle NOT and LPAREN attached to field", () => {
@@ -376,7 +382,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle LPAREN and NOT attached to field", () => {
@@ -391,7 +397,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle RPAREN attached to values", () => {
@@ -407,7 +413,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle operators that are part of the word", () => {
@@ -423,7 +429,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle operators as part of quoted value", () => {
@@ -437,7 +443,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle nested attached operators", () => {
@@ -462,7 +468,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
   })
 
@@ -487,7 +493,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle multiple operations", () => {
@@ -506,7 +512,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle empty operations", () => {
@@ -520,7 +526,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle operation after empty operation", () => {
@@ -536,7 +542,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle operation when query has '||' operator", () => {
@@ -556,7 +562,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
 
     it("should handle everything after the first PIPE as operations", () => {
@@ -572,7 +578,7 @@ describe("Lexer", () => {
       ]
 
       const tokens = new Lexer().tokenize(query)
-      expect(tokens).toEqual(expected)
+      expect(tokens).toStrictEqual(expected)
     })
   })
 
@@ -592,6 +598,15 @@ describe("Lexer", () => {
       expect(() => new Lexer().tokenize(query)).toThrowErrorWithNameAndMessage(
         "LexerError",
         "Unexpected character '\"' at position 6",
+      )
+    })
+
+    it("should throw on empty quoted operation", () => {
+      const query = 'field == value | ""'
+
+      expect(() => new Lexer().tokenize(query)).toThrowErrorWithNameAndMessage(
+        "LexerError",
+        "Unexpected character '\"' at position 17",
       )
     })
   })

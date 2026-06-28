@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it } from "vitest"
 
 import { FilterEvaluator } from "#/filter-evaluator/filter-evaluator.ts"
 import { parseQuery, testData, testOptions, testSchema } from "#/test-utils.ts"
@@ -19,7 +19,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery(complexQuery).filter
       const result = filterEvaluator.filter(testData, node)
       expect(result).toHaveLength(4)
-      expect(result.map((r) => r.title)).toEqual([
+      expect(result.map((r) => r.title)).toStrictEqual([
         "The Matrix Reloaded",
         "Inception",
         "Interstellar",
@@ -36,7 +36,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title == "Other Title"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should resolve field aliases", () => {
@@ -44,7 +44,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('t == "The Matrix"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle string fields", () => {
@@ -52,7 +52,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('genre == "Action"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle number fields", () => {
@@ -60,7 +60,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("year >= 1999").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle boolean fields", () => {
@@ -68,7 +68,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("monitored").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle match-all", () => {
@@ -76,7 +76,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("*").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle unknown fields when 'allowUnknownFields' is true", () => {
@@ -84,7 +84,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('bar == "some value"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle comparison to undefined", () => {
@@ -92,7 +92,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("undefinedField == undefined").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should handle comparison to null", () => {
@@ -100,7 +100,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("undefinedField == null").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should handle fields that are not in the data", () => {
@@ -108,7 +108,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('foo == "some value"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should handle empty checks for fields that are not in the data", () => {
@@ -116,7 +116,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('foo == ""').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should return false for non-comparable data value type: array", () => {
@@ -124,7 +124,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("title == foo").filter
       const result = filterEvaluator.evaluateFilter(node, { title: ["foo"] })
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should return false for non-comparable data value type: object", () => {
@@ -132,7 +132,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title == "[object Object]"').filter
       const result = filterEvaluator.evaluateFilter(node, { title: { foo: "bar" } })
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
   })
 
@@ -142,7 +142,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title == "The Matrix"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle not equals operator", () => {
@@ -150,7 +150,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title != "Other Title"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle contains operator", () => {
@@ -158,7 +158,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title *= "Matrix"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle starts with operator", () => {
@@ -166,7 +166,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title ^= "The"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle ends with operator", () => {
@@ -174,7 +174,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title $= "Matrix"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle regex operator", () => {
@@ -182,7 +182,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title ~= ".*Matrix.*"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle case-insensitive operator", () => {
@@ -190,12 +190,12 @@ describe("FilterEvaluator", () => {
       const node1 = parseQuery('title == "the matrix"').filter
       const result1 = filterEvaluator.evaluateFilter(node1, testDataObject)
 
-      expect(result1).toBeFalse()
+      expect(result1).toBe(false)
 
       const node2 = parseQuery('title i== "the matrix"').filter
       const result2 = filterEvaluator.evaluateFilter(node2, testDataObject)
 
-      expect(result2).toBeTrue()
+      expect(result2).toBe(true)
     })
 
     it("should handle case-insensitive regex", () => {
@@ -203,7 +203,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title i~= "matrix"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle invalid regex gracefully", () => {
@@ -211,7 +211,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title ~= "[invalid"').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse() // Invalid regex returns no matches
+      expect(result).toBe(false) // Invalid regex returns no matches
     })
 
     it("should handle greater than or equal", () => {
@@ -219,7 +219,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("rating >= 8.7").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle less than or equal", () => {
@@ -227,7 +227,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("rating <= 9.0").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
   })
 
@@ -237,7 +237,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('genre == "Action" || rating >= 8.7').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle complex expressions with parentheses", () => {
@@ -245,7 +245,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('(genre == "Action" || year == 1999) && rating >= 8.7').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle NOT operations", () => {
@@ -253,7 +253,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("!monitored").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeFalse()
+      expect(result).toBe(false)
     })
 
     it("should handle NOT with comparisons", () => {
@@ -261,7 +261,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('!(genre == "Drama")').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle AND operations", () => {
@@ -269,7 +269,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('genre == "Action" && monitored').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle OR operations", () => {
@@ -277,7 +277,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery("year == 1999 || year == 2000").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle deeply nested expressions", () => {
@@ -285,19 +285,19 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('monitored && (title i*= "matrix" || rating >= 8.6) && year <= 2010').filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
   })
 
   describe("empty checks", () => {
-    const dataWithEmpty = { title: "", year: null, monitored: true, rating: 7.5, genre: "Comedy", status: undefined }
+    const dataWithEmpty = { genre: "Comedy", monitored: true, rating: 7.5, status: undefined, title: "", year: null }
 
     it("should match empty strings", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery('title == ""').filter
       const result = filterEvaluator.evaluateFilter(node, dataWithEmpty)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should match undefined values as empty", () => {
@@ -305,7 +305,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('status == ""').filter
       const result = filterEvaluator.evaluateFilter(node, dataWithEmpty)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should match null values as empty", () => {
@@ -313,7 +313,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('year == ""').filter
       const result = filterEvaluator.evaluateFilter(node, dataWithEmpty)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle not empty comparisons", () => {
@@ -321,7 +321,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('genre != ""').filter
       const result = filterEvaluator.evaluateFilter(node, dataWithEmpty)
 
-      expect(result).toBeTrue()
+      expect(result).toBe(true)
     })
 
     it("should handle empty string with contains operator", () => {
@@ -329,7 +329,7 @@ describe("FilterEvaluator", () => {
       const node = parseQuery('title *= ""').filter
       const result = filterEvaluator.evaluateFilter(node, dataWithEmpty)
 
-      expect(result).toBeFalse() // Nothing contains empty string
+      expect(result).toBe(false) // Nothing contains empty string
     })
   })
 
@@ -338,7 +338,7 @@ describe("FilterEvaluator", () => {
       expect(
         () =>
           new FilterEvaluator(
-            { title: { type: "string", alias: "t" }, title2: { type: "string", alias: "t" } },
+            { title: { alias: "t", type: "string" }, title2: { alias: "t", type: "string" } },
             testOptions,
           ),
       ).toThrowErrorWithNameAndMessage("FilterQLError", "Duplicate field alias 't' in schema")
