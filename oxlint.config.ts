@@ -5,6 +5,6 @@ const config = oxlintConfig({
   rules: {
     "unicorn/no-null": "off",
   },
-})
+} as const)
 
 export default defineConfig(config)

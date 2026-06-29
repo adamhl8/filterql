@@ -1,6 +1,6 @@
 {
   "name": "filterql",
-  "version": "3.0.4",
+  "version": "3.0.2",
   "description": "A tiny query language for filtering structured data",
   "keywords": [
     "data",
@@ -39,15 +39,18 @@
     }
   },
   "scripts": {
+    "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && oxfmt && oxlint --fix --fix-suggestions --fix-dangerously && adamhl8-knip && nub run test",
+    "test": "vitest run",
+    "bump-deps": "nub update -L && rm -f lock.yaml && nub i && oxfmt lock.yaml",
     "bundle": "nub run lint && tsdown",
-    "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && oxfmt && oxlint --fix --fix-suggestions --fix-dangerously && adamhl8-knip && vitest run",
-    "prepare": "lefthook install",
-    "prepublishOnly": "nub run bundle",
-    "bump-deps": "rm -f lock.yaml && nub update -L"
+    "release": "release-it --ci -i \"$(adamhl8-cliff --bumped-version)\"",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.21.1",
+    "@adamhl8/configs": "^0.23.4",
     "@arethetypeswrong/core": "^0.18.4",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
     "@types/node": "^26.0.1",
     "@vitest/coverage-v8": "^4.1.9",
     "knip": "^6.23.0",
@@ -56,6 +59,7 @@
     "oxlint": "^1.71.0",
     "oxlint-tsgolint": "^0.23.0",
     "publint": "^0.3.21",
+    "release-it": "^20.2.1",
     "tsdown": "^0.22.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"

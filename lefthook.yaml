@@ -1,5 +1,2 @@
-pre-commit:
-  fail_on_changes: "always"
-  commands:
-    lint:
-      run: nub run lint
+extends:
+  - node_modules/@adamhl8/configs/dist/configs/lefthook.base.yaml
