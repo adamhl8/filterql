@@ -41,7 +41,7 @@
   "scripts": {
     "lint": "markdown-toc -i --bullets '-' --maxdepth 3 ./README.md && oxfmt && oxlint --fix --fix-suggestions --fix-dangerously && adamhl8-knip && nub run test",
     "test": "vitest run",
-    "bump-deps": "nub update -L && rm -f lock.yaml && nub i && oxfmt lock.yaml",
+    "bump-deps": "nub update -L && rm -f lock.yaml && nub i --no-frozen-lockfile && oxfmt lock.yaml",
     "bundle": "nub run lint && tsdown",
     "release": "release-it --ci -i \"$(adamhl8-cliff --bumped-version)\"",
     "prepare": "lefthook install"
