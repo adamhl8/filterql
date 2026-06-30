@@ -113,7 +113,8 @@ The following logical operators can be used in queries:
 - `&&` (and)
 - `||` (or)
 
-> [!TIP] Note that these operators are listed in order of precedence. This is important because many queries will likely require parentheses to do what you want.
+> [!TIP]
+> Note that these operators are listed in order of precedence. This is important because many queries will likely require parentheses to do what you want.
 
 For example:
 
@@ -134,7 +135,8 @@ The following comparison operators can be used in comparisons:
 - `>=` (greater than or equal)
 - `<=` (less than or equal)
 
-> [!TIP] Comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`.
+> [!TIP]
+> Comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`.
 
 ```
 title i== interstellar
@@ -221,7 +223,8 @@ There are currently two built-in operations:
 
 If you have any suggestions for other operations, please let me know by opening an issue!
 
-> [!TIP] You can also define **[custom operations](#custom-operations)**.
+> [!TIP]
+> You can also define **[custom operations](#custom-operations)**.
 
 ## TypeScript Library
 
@@ -268,7 +271,8 @@ movie-cli '(genre == Action || genre == Comedy) && year >= 2000 && rating >= 8.5
 
 The schema given to the `FilterQL` constructor determines what fields and value types are allowed in queries.
 
-> [!IMPORTANT] The type of data the `FilterQL` methods accept is `Record<string, unknown>[]`. This means that **FilterQL does not care about extra properties/keys in the _data_**.
+> [!IMPORTANT]
+> The type of data the `FilterQL` methods accept is `Record<string, unknown>[]`. This means that **FilterQL does not care about extra properties/keys in the _data_**.
 >
 > In other words, a schema's keys can be a subset of the data's keys.
 >
@@ -379,7 +383,8 @@ The `FilterQL` constructor accepts an optional `options` object with the followi
 
 ### Custom Operations
 
-> [!TIP] Take a look at the built-in operations in [src/operation-evaluator/operations.ts](./src/operation-evaluator/operations.ts) to see how they're implemented.
+> [!TIP]
+> Take a look at the built-in operations in [src/operation-evaluator/operations.ts](./src/operation-evaluator/operations.ts) to see how they're implemented.
 
 Let's say you want to create a custom operation called `ROUND` that takes a field name as the first argument and rounds the number value of that field.
 
@@ -455,7 +460,8 @@ class FilterQL {
 
 ## Language Specification
 
-> [!NOTE] Implementations in other languages are more than welcome!
+> [!NOTE]
+> Implementations in other languages are more than welcome!
 
 ### Grammar
 
@@ -492,12 +498,12 @@ title i== "the matrix"
 
 ### Logical Operators
 
-| Operator | Description | Example | Precedence (in order from highest to lowest) |
-| --- | --- | --- | --- |
-| `()` | Parentheses (grouping) | `(year >= 2000 && year <= 2010)` | Highest precedence |
-| `!` | NOT | `!title *= Matrix` | Right associative |
-| `&&` | AND | `monitored && year >= 2000` | Left associative |
-| `\|\|` | OR | `genre == Action \|\| genre == Drama` | Left associative |
+| Operator | Description            | Example                               | Precedence (in order from highest to lowest) |
+| -------- | ---------------------- | ------------------------------------- | -------------------------------------------- |
+| `()`     | Parentheses (grouping) | `(year >= 2000 && year <= 2010)`      | Highest precedence                           |
+| `!`      | NOT                    | `!title *= Matrix`                    | Right associative                            |
+| `&&`     | AND                    | `monitored && year >= 2000`           | Left associative                             |
+| `\|\|`   | OR                     | `genre == Action \|\| genre == Drama` | Left associative                             |
 
 ### Match-All
 

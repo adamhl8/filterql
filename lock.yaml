@@ -8,8 +8,8 @@ importers:
   .:
     devDependencies:
       "@adamhl8/configs":
-        specifier: ^0.24.3
-        version: 0.24.3(@commitlint/config-conventional@21.2.0)(eslint@10.6.0)(typescript@6.0.3)
+        specifier: ^0.24.4
+        version: 0.24.4(@commitlint/config-conventional@21.2.0)(eslint@10.6.0)(typescript@6.0.3)
       "@arethetypeswrong/core":
         specifier: ^0.18.4
         version: 0.18.4
@@ -57,9 +57,9 @@ importers:
         version: 4.1.9(@types/node@26.0.1)(@vitest/coverage-v8@4.1.9)(vite@8.1.0(@types/node@26.0.1))
 
 packages:
-  "@adamhl8/configs@0.24.3":
+  "@adamhl8/configs@0.24.4":
     resolution:
-      { integrity: sha512-UMm/B9aK0EsspTRHFVv2mCbCtTp5tUnGc+3qQ0YIX6ssWlCCe5SEJBc01GqzxmhoBDcjGrmtX2arS7LL+e2Epg== }
+      { integrity: sha512-W5Md2un0hMIf+JkCOGvF17ByEHX+noZmIjDUIcA2MoG0AkPTywioPJh4N1rv61KAuR+ASkSwT3Nm1GajMgKu5g== }
     hasBin: true
     peerDependencies:
       "@commitlint/config-conventional": ^21.0.0
@@ -3374,7 +3374,7 @@ packages:
       { integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ== }
 
 snapshots:
-  "@adamhl8/configs@0.24.3(@commitlint/config-conventional@21.2.0)(eslint@10.6.0)(typescript@6.0.3)":
+  "@adamhl8/configs@0.24.4(@commitlint/config-conventional@21.2.0)(eslint@10.6.0)(typescript@6.0.3)":
     dependencies:
       "@adamhl8/eslint-plugin-clean-modules": 0.1.1(eslint@10.6.0)(typescript@6.0.3)
       "@commitlint/config-conventional": 21.2.0
