@@ -1,0 +1,9 @@
+name: Release
+on:
+  workflow_dispatch: {}
+jobs:
+  release:
+    permissions:
+      contents: write
+    uses: adamhl8/configs/.github/workflows/release.yml@main
+    secrets: inherit

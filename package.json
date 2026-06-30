@@ -43,11 +43,12 @@
     "test": "vitest run",
     "bump-deps": "nub update -L && rm -f lock.yaml && nub i --no-frozen-lockfile && oxfmt lock.yaml",
     "bundle": "nub run lint && tsdown",
-    "release": "release-it --ci -i \"$(adamhl8-cliff --bumped-version)\"",
+    "release": "gh workflow run release.yml",
+    "release:run": "release-it --ci -i \"$(adamhl8-cliff --bumped-version)\"",
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^0.24.4",
+    "@adamhl8/configs": "^0.24.5",
     "@arethetypeswrong/core": "^0.18.4",
     "@commitlint/cli": "^21.2.0",
     "@commitlint/config-conventional": "^21.2.0",
