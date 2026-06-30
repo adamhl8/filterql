@@ -1,0 +1,8 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  ci:
+    uses: adamhl8/configs/.github/workflows/ci.yml@main

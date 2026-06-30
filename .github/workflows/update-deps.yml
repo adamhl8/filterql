@@ -1,0 +1,9 @@
+name: Update dependencies
+on:
+  schedule:
+    - cron: "0 13 * * 5" # Fridays, 13:00 UTC
+  workflow_dispatch: {}
+jobs:
+  update-deps:
+    uses: adamhl8/configs/.github/workflows/update-deps.yml@main
+    secrets: inherit
