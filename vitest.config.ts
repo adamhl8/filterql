@@ -3,8 +3,8 @@ import { defineConfig } from "vitest/config"
 
 const config = vitestConfig({
   test: {
-    setupFiles: ["./src/test-setup.ts"] satisfies string[],
+    setupFiles: ["./src/test-setup.ts"],
   },
-} as const)
+})
 
 export default defineConfig(config)
