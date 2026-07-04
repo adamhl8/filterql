@@ -36,9 +36,13 @@ export class OperationEvaluator extends BaseEvaluator {
       const operationFn = this.operationMap[operation.name.toUpperCase()]
       if (!operationFn) throw new OperationEvaluatorError(`Unknown operation '${operation.name}'`)
 
-      // biome-ignore lint/nursery/noParametersOnlyUsedInRecursion: need to form closure around `this.resolveField` so the correct `this` is used when called from the operation function
+      // need to form closure around `this.resolveField` so the correct `this` is used when called from the operation function
       const resolveField = (fieldOrAlias: string) => this.resolveField(fieldOrAlias)
-      newData = operationFn(newData, operation.args, { schema: this.schema, options: this.options, resolveField })
+      newData = operationFn(newData, operation.args, {
+        schema: this.schema,
+        options: this.options,
+        resolveField,
+      })
     }
 
     return newData
