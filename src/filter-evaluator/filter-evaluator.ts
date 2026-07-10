@@ -1,6 +1,6 @@
-import { BaseEvaluator } from "#/base-evaluator.ts"
-import type { Comparison } from "#/filter-evaluator/types.ts"
-import { isComparableDataValue } from "#/filter-evaluator/types.ts"
+import { BaseEvaluator } from "#base-evaluator.ts"
+import type { Comparison } from "#filter-evaluator/types.ts"
+import { isComparableDataValue } from "#filter-evaluator/types.ts"
 import type {
   BaseComparisonOperator,
   ComparisonNode,
@@ -8,8 +8,8 @@ import type {
   FilterNode,
   LogicalOpNode,
   NotOpNode,
-} from "#/parser/types.ts"
-import type { DataObject } from "#/types.ts"
+} from "#parser/types.ts"
+import type { DataObject } from "#types.ts"
 
 class FilterEvaluatorError extends Error {
   public constructor(message: string) {

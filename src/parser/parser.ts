@@ -1,6 +1,6 @@
-import type { Token } from "#/lexer/types.ts"
-import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "#/parser/types.ts"
-import { isComparisonOperator } from "#/parser/types.ts"
+import type { Token } from "#lexer/types.ts"
+import type { ASTNode, ComparisonNode, ExpressionNode, FilterNode, OperationNode } from "#parser/types.ts"
+import { isComparisonOperator } from "#parser/types.ts"
 
 class ParserError extends Error {
   public constructor(message: string) {

@@ -1,8 +1,11 @@
-import { expect } from "vitest"
+import { expect } from "bun:test"
+
+const isCallbackFn = (fn: unknown): fn is () => unknown => typeof fn === "function"
 
 expect.extend({
-  toThrowErrorWithNameAndMessage: (callback: () => void, expectedName, expectedMessage) => {
-    if (typeof callback !== "function") throw new Error("Expected a function as the first argument")
+  toThrowErrorWithNameAndMessage: (callback, expectedName, expectedMessage) => {
+    if (!isCallbackFn(callback)) throw new Error("Expected a function as the first argument")
+
     let caughtError: Error | undefined
     try {
       // oxlint-disable-next-line promise/prefer-await-to-callbacks

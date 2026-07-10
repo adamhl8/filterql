@@ -1,4 +1,4 @@
-import { comparisonOperators } from "#/lexer/types.ts"
+import { comparisonOperators } from "#lexer/types.ts"
 
 export type BaseComparisonOperator = (typeof comparisonOperators)[number]
 /** Case-insensitive comparison operators */

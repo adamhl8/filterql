@@ -1,2 +1,5 @@
 node_modules/
 dist/
+.terraform
+.terraform.lock.hcl
+# The above patterns are managed by @adamhl8/configs. Anything manually added above this line will be replaced.

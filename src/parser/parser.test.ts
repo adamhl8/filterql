@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "bun:test"
 
-import { Lexer } from "#/lexer/lexer.ts"
-import type { Token } from "#/lexer/types.ts"
-import { Parser } from "#/parser/parser.ts"
-import type { ASTNode } from "#/parser/types.ts"
+import { Lexer } from "#lexer/lexer.ts"
+import type { Token } from "#lexer/types.ts"
+import { Parser } from "#parser/parser.ts"
+import type { ASTNode } from "#parser/types.ts"
 
 describe("parser", () => {
   describe("queries", () => {

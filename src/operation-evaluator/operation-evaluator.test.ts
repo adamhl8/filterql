@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it } from "bun:test"
 
-import { OperationEvaluator } from "#/operation-evaluator/operation-evaluator.ts"
-import type { OperationFn } from "#/operation-evaluator/types.ts"
-import { parseQuery, testData, testOptions, testSchema } from "#/test-utils.ts"
+import { OperationEvaluator } from "#operation-evaluator/operation-evaluator.ts"
+import type { OperationFn } from "#operation-evaluator/types.ts"
+import { parseQuery, testData, testOptions, testSchema } from "#test-utils.ts"
 
 describe("OperationEvaluator", () => {
   describe("default operations", () => {
@@ -141,7 +141,7 @@ describe("OperationEvaluator", () => {
       const node = parseQuery("* | LIMIT")
       const result = operationEvaluator.apply(testData, node.operations)
       expect(result).toHaveLength(1)
-      expect(result[0]?.title).toBe("custom limit")
+      expect(result[0]?.title as string | undefined).toBe("custom limit")
     })
 
     it("should handle custom operation", () => {
@@ -151,7 +151,7 @@ describe("OperationEvaluator", () => {
       const node = parseQuery("* | MYOP | LIMIT 1")
       const result = operationEvaluator.apply(testData, node.operations)
       expect(result).toHaveLength(1)
-      expect(result[0]?.title).toBe("my op")
+      expect(result[0]?.title as string | undefined).toBe("my op")
     })
 
     it("should throw on invalid direction argument", () => {

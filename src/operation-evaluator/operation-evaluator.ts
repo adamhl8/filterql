@@ -1,8 +1,8 @@
-import { BaseEvaluator } from "#/base-evaluator.ts"
-import { defaultOperations } from "#/operation-evaluator/operations.ts"
-import type { OperationMap } from "#/operation-evaluator/types.ts"
-import type { OperationNode } from "#/parser/types.ts"
-import type { DataObject, RequiredFilterQLOptions, Schema } from "#/types.ts"
+import { BaseEvaluator } from "#base-evaluator.ts"
+import { defaultOperations } from "#operation-evaluator/operations.ts"
+import type { OperationMap } from "#operation-evaluator/types.ts"
+import type { OperationNode } from "#parser/types.ts"
+import type { DataObject, RequiredFilterQLOptions, Schema } from "#types.ts"
 
 class OperationEvaluatorError extends Error {
   public constructor(message: string) {
