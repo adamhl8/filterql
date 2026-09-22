@@ -1,3 +1,11 @@
+## [3.0.5](https://github.com/adamhl8/filterql/compare/v3.0.4..v3.0.5) - 2026-09-22
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ update dependencies ([6239053](https://github.com/adamhl8/filterql/commit/6239053ae542b9ffb61c73d1cec80a0d8267af0c) by @adamhl8)
+
+- _(tsdown)_ remove failOnWarn override ([389282b](https://github.com/adamhl8/filterql/commit/389282b671b741442b2839560dc9d42f2fab55d2) by @adamhl8)
+
 ## [3.0.4](https://github.com/adamhl8/filterql/compare/v3.0.3..v3.0.4) - 2026-07-13
 
 ### ⚙️ Miscellaneous Tasks
