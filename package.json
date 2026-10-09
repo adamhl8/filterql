@@ -42,18 +42,18 @@
     "prepare": "just prepare"
   },
   "devDependencies": {
-    "@adamhl8/configs": "^2.4.0",
+    "@adamhl8/configs": "^2.8.1",
     "@arethetypeswrong/core": "^0.18.5",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@types/bun": "^1.4.2",
-    "knip": "^6.37.0",
+    "knip": "^6.41.0",
     "markdown-toc": "^1.2.0",
-    "oxfmt": "^0.70.0",
-    "oxlint": "^1.85.0",
-    "oxlint-tsgolint": "^7.0.2002",
-    "publint": "^0.3.24",
-    "release-it": "^21.1.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "oxlint-tsgolint": "^7.0.2003",
+    "publint": "^0.3.25",
+    "release-it": "^21.1.1",
     "tsdown": "^0.23.0",
     "typescript": "^7.0.2"
   }
