@@ -1,3 +1,9 @@
+## [3.0.6](https://github.com/adamhl8/filterql/compare/v3.0.5..v3.0.6) - 2026-10-26
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ update dependencies ([829ad93](https://github.com/adamhl8/filterql/commit/829ad93a63ed25032f68f30629469acdead1cd6e) by @adamhl8)
+
 ## [3.0.5](https://github.com/adamhl8/filterql/compare/v3.0.4..v3.0.5) - 2026-09-22
 
 ### ⚙️ Miscellaneous Tasks
