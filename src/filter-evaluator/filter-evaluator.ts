@@ -60,7 +60,7 @@ export class FilterEvaluator extends BaseEvaluator {
     const isValidNumber = isNumber(value)
 
     // this check is not specific to any field type, but rather a general rule for numeric operators
-    const isNumericOperator = [">=", "<="].includes(operator)
+    const isNumericOperator = operator === ">=" || operator === "<="
     if (isNumericOperator && !isValidNumber) {
       throw new FilterEvaluatorError(
         `Invalid value '${value}' for field '${field}': the '${operator}' operator must be used with a number`,

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
 
+import { testData, testSchema } from "#__tests__/test-utils.ts"
 import { FilterQL } from "#filterql.ts"
 import type { OperationMap } from "#operation-evaluator/types.ts"
-import { testData, testSchema } from "#test-utils.ts"
 
 describe("FilterQL", () => {
   describe("usage", () => {

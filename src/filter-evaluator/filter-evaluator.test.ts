@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test"
 
+import { parseQuery, testData, testOptions, testSchema } from "#__tests__/test-utils.ts"
 import { FilterEvaluator } from "#filter-evaluator/filter-evaluator.ts"
-import { parseQuery, testData, testOptions, testSchema } from "#test-utils.ts"
 
 describe("FilterEvaluator", () => {
   describe("filter", () => {
@@ -290,7 +290,15 @@ describe("FilterEvaluator", () => {
   })
 
   describe("empty checks", () => {
-    const dataWithEmpty = { genre: "Comedy", monitored: true, rating: 7.5, status: undefined, title: "", year: null }
+    const dataWithEmpty = {
+      genre: "Comedy",
+      monitored: true,
+      rating: 7.5,
+      status: undefined,
+      title: "",
+      // oxlint-disable-next-line unicorn/no-null - `null` is one of the empty values under test
+      year: null,
+    }
 
     it("should match empty strings", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)

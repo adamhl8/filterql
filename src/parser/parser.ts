@@ -23,9 +23,9 @@ export class Parser {
    * | field | "*"
    */
   public parse(tokens: Token[]): ASTNode {
+    const [firstToken] = tokens
     this.tokens = tokens
-    // oxlint-disable-next-line prefer-destructuring
-    this.#current = this.tokens[0]
+    this.#current = firstToken
 
     // an empty query is treated as a match-all filter
     if (this.current().type === "EOF") {

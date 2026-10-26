@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
 
+import { parseQuery, testData, testOptions, testSchema } from "#__tests__/test-utils.ts"
 import { OperationEvaluator } from "#operation-evaluator/operation-evaluator.ts"
 import type { OperationFn } from "#operation-evaluator/types.ts"
-import { parseQuery, testData, testOptions, testSchema } from "#test-utils.ts"
 
 describe("OperationEvaluator", () => {
   describe("default operations", () => {
@@ -135,7 +135,7 @@ describe("OperationEvaluator", () => {
 
   describe("custom operations", () => {
     it("should handle overridden default operation", () => {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion unicorn/consistent-function-scoping
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion unicorn/consistent-function-scoping - a custom operation returns rows that aren't `T`, and it stays next to its only test
       const customLimit: OperationFn = <T>() => [{ title: "custom limit" }] as T[]
       const operationEvaluator = new OperationEvaluator(testSchema, testOptions, { LIMIT: customLimit })
       const node = parseQuery("* | LIMIT")
@@ -145,7 +145,7 @@ describe("OperationEvaluator", () => {
     })
 
     it("should handle custom operation", () => {
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion unicorn/consistent-function-scoping
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion unicorn/consistent-function-scoping - a custom operation returns rows that aren't `T`, and it stays next to its only test
       const MYOP: OperationFn = <T>() => [{ title: "my op" }, { title: "my op2" }] as T[]
       const operationEvaluator = new OperationEvaluator(testSchema, testOptions, { MYOP })
       const node = parseQuery("* | MYOP | LIMIT 1")

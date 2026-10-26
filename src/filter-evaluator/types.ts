@@ -8,8 +8,8 @@ export interface Comparison {
 }
 
 export const isComparableDataValue = (value: unknown): value is string | number | boolean | undefined | null =>
-  typeof value === "string" ||
-  typeof value === "number" ||
-  typeof value === "boolean" ||
-  value === undefined ||
-  value === null
+  typeof value === "string"
+  || typeof value === "number"
+  || typeof value === "boolean"
+  || value === undefined
+  || value === null

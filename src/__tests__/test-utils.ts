@@ -30,6 +30,7 @@ export const testData = [
     genre: "Action",
     status: "Available",
     undefinedField: undefined,
+    // oxlint-disable-next-line unicorn/no-null - the data must hold a real `null` to test how queries treat it
     nullField: null,
     bar: "some value", // field that's not in the schema
   },
