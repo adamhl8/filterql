@@ -36,6 +36,7 @@ export class Parser {
   public parse(tokens: Token[]): ASTNode {
     const [firstToken] = tokens
     this.tokens = tokens
+    this.position = 0
     this.#current = firstToken
 
     // an empty query is treated as a match-all filter

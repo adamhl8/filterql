@@ -610,4 +610,15 @@ describe("Lexer", () => {
       )
     })
   })
+
+  describe("reuse", () => {
+    it("should tokenize each query independently when reused", () => {
+      const queries = ["* | SORT year desc", "title == matrix", "genre i== action", "year >= 2000 && m"]
+      const lexer = new Lexer()
+
+      const results = queries.map((query) => lexer.tokenize(query))
+
+      expect(results).toStrictEqual(queries.map((query) => new Lexer().tokenize(query)))
+    })
+  })
 })

@@ -43,7 +43,7 @@ export class Lexer {
    */
   #position = 0
   private current = ""
-  private readonly tokens: Token[] = []
+  private tokens: Token[] = []
 
   /**
    * We are done lexing the filter once we encounter the first PIPE token, after which we switch to the operation token
@@ -145,7 +145,11 @@ export class Lexer {
 
   public tokenize(query: string): Token[] {
     this.query = query
+    this.#position = 0
     this.current = query[0] ?? ""
+    // Assign a new array because the previous call returned `tokens` to its caller.
+    this.tokens = []
+    this.isFilter = true
 
     while (!this.isEOF()) {
       this.skipWhitespace()

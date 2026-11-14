@@ -505,4 +505,21 @@ describe("parser", () => {
       })
     })
   })
+
+  describe("reuse", () => {
+    it("should parse each query independently when reused", () => {
+      const queries = [
+        "year >= 2000",
+        "year >= 2000",
+        "* | SORT year desc",
+        "title == matrix",
+        "!(m || genre == Action)",
+      ]
+      const parser = new Parser()
+
+      const results = queries.map((query) => parser.parse(new Lexer().tokenize(query)))
+
+      expect(results).toStrictEqual(queries.map((query) => new Parser().parse(new Lexer().tokenize(query))))
+    })
+  })
 })

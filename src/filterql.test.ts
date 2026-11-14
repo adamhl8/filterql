@@ -39,4 +39,23 @@ describe("FilterQL", () => {
       expect(result.every((r) => r.title === "Inception")).toBe(true)
     })
   })
+
+  describe("reuse", () => {
+    it("should return the same results when one instance runs several queries", () => {
+      const queries = [
+        "year >= 2008",
+        "year >= 2008",
+        "genre == Action",
+        "genre i== action",
+        "* | SORT year desc",
+        "title == Inception",
+        "m",
+      ]
+      const filterql = new FilterQL({ schema: testSchema })
+
+      const results = queries.map((query) => filterql.query(testData, query))
+
+      expect(results).toStrictEqual(queries.map((query) => new FilterQL({ schema: testSchema }).query(testData, query)))
+    })
+  })
 })
