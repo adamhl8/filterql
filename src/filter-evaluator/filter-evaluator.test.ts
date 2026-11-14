@@ -63,6 +63,13 @@ describe("FilterEvaluator", () => {
       expect(result).toBeTrue()
     })
 
+    it.each(["9.0", ".5", "1e3", "-1.5"])("should accept decimal number value %s", (value) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(`rating >= ${value}`).filter
+
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).not.toThrow()
+    })
+
     it("should handle boolean fields", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery("monitored").filter
@@ -358,6 +365,24 @@ describe("FilterEvaluator", () => {
       expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
         "FilterEvaluatorError",
         "Unknown field 'bar'",
+      )
+    })
+
+    it.each(['" "', "0x10", "Infinity"])("should throw on non-decimal number value %s", (value) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(`rating == ${value}`).filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        `Invalid value '${value.replaceAll('"', "")}' for field 'rating' (number)`,
+      )
+    })
+
+    it("should throw when a numeric operator is used with an empty value", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery('rating >= ""').filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid value '' for field 'rating': the '>=' operator must be used with a number",
       )
     })
 

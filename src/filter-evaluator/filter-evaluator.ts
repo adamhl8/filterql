@@ -19,9 +19,11 @@ class FilterEvaluatorError extends Error {
   }
 }
 
-const isNumber = (num: string): boolean => {
-  const parsedNumber = Number(num)
-  return !Number.isNaN(parsedNumber)
+/** Parses a finite decimal number, or returns `undefined`. */
+const parseNumber = (value: string): number | undefined => {
+  const parsedNumber = Number(value)
+  // oxlint-disable-next-line unicorn/prefer-number-coercion - `parseFloat()` rejects `""`, whitespace, and hex, binary, or octal literals, which `Number()` accepts
+  return Number.isFinite(parsedNumber) && parsedNumber === Number.parseFloat(value) ? parsedNumber : undefined
 }
 
 const isEmpty = (val: unknown) => val === "" || val === undefined || val === null
@@ -57,7 +59,7 @@ export class FilterEvaluator extends BaseEvaluator {
     const operator = (isCaseInsensitive ? node.operator.slice(1) : node.operator) as BaseComparisonOperator
 
     const { value } = node
-    const isValidNumber = isNumber(value)
+    const isValidNumber = parseNumber(value) !== undefined
 
     // this check is not specific to any field type, but rather a general rule for numeric operators
     const isNumericOperator = operator === ">=" || operator === "<="
