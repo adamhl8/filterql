@@ -18,7 +18,7 @@ describe("OperationEvaluator", () => {
         const operationEvaluator = new OperationEvaluator(testSchema, testOptions)
         const node = parseQuery("* | LIMIT foo")
         expect(() => operationEvaluator.apply(testData, node.operations)).toThrowErrorWithNameAndMessage(
-          "Error",
+          "TypeError",
           "Invalid number argument 'foo' for operation 'LIMIT'",
         )
       })

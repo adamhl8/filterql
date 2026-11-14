@@ -8,7 +8,7 @@ import type {
   FilterNode,
   LogicalOpNode,
   NotOpNode,
-} from "#parser/types.ts"
+} from "#parser/parser.ts"
 import type { DataObject } from "#types.ts"
 
 class FilterEvaluatorError extends Error {

@@ -4,7 +4,7 @@ export const defaultOperations: OperationMap = {
   LIMIT: (data, args) => {
     const [limit] = args
     const limitNumber = Number(limit)
-    if (Number.isNaN(limitNumber)) throw new Error(`Invalid number argument '${limit}' for operation 'LIMIT'`)
+    if (Number.isNaN(limitNumber)) throw new TypeError(`Invalid number argument '${limit}' for operation 'LIMIT'`)
     if (limitNumber < 0) throw new Error(`Number argument '${limit}' for operation 'LIMIT' cannot be negative`)
     return data.slice(0, limitNumber)
   },

@@ -1,6 +1,9 @@
 import type { FilterTokenType, OperationTokenType, Token, TokenType } from "#lexer/types.ts"
 import { comparisonOperators, filterTokenMap, operationTokenMap } from "#lexer/types.ts"
 
+export { comparisonOperators } from "#lexer/types.ts"
+export type { Token } from "#lexer/types.ts"
+
 class LexerError extends Error {
   public constructor(message: string) {
     super(message)
