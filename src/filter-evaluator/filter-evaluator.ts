@@ -26,29 +26,59 @@ const parseNumber = (value: string): number | undefined => {
   return Number.isFinite(parsedNumber) && parsedNumber === Number.parseFloat(value) ? parsedNumber : undefined
 }
 
+/** Compiles a `~=` pattern, and throws if it isn't a valid regex. */
+const compileRegex = (pattern: string, isCaseInsensitive: boolean, field: string): RegExp => {
+  try {
+    return new RegExp(pattern, isCaseInsensitive ? "i" : "")
+  } catch {
+    throw new FilterEvaluatorError(`Invalid regex '${pattern}' for field '${field}'`)
+  }
+}
+
 const isEmpty = (val: unknown) => val === "" || val === undefined || val === null
 
 export class FilterEvaluator extends BaseEvaluator {
   /** Filters the data array by evaluating the AST node against each data object */
   public filter<T extends DataObject>(data: T[], node: FilterNode): T[] {
+    // Compile before filtering so an invalid filter throws even when `data` is empty.
+    this.compile(node)
     return data.filter((item) => this.evaluateFilter(node, item))
   }
 
-  /** Evaluate a FilterNode against a data object */
-  public evaluateFilter(node: FilterNode, data: DataObject): boolean {
-    return this.evaluateExpression(node.expression, data)
+  // Cache resolved comparisons because `evaluateFilter()` runs once per row.
+  private readonly comparisons = new WeakMap<ComparisonNode, Comparison>()
+
+  private getComparison(node: ComparisonNode): Comparison {
+    const cached = this.comparisons.get(node)
+    if (cached) return cached
+
+    const comparison = this.compileComparison(node)
+    this.comparisons.set(node, comparison)
+    return comparison
   }
 
-  private evaluateExpression(node: ExpressionNode, data: DataObject): boolean {
-    if (node.type === "match_all") return true
-    else if (node.type === "comparison") return this.evaluateComparison(node, data)
-    else if (node.type === "not") return this.evaluateNot(node, data)
-    // `node.type` is either "and" or "or"
-    return this.evaluateLogical(node, data)
+  /** Compiles and validates every comparison in the filter, and throws if one is invalid. */
+  public compile(node: FilterNode): void {
+    this.compileExpression(node.expression)
+  }
+
+  private compileExpression(node: ExpressionNode): void {
+    if (node.type === "match_all") return
+    if (node.type === "comparison") {
+      // Compile no matter what instead of using `getComparison()` because the caller may have changed the node.
+      this.comparisons.set(node, this.compileComparison(node))
+      return
+    }
+    if (node.type === "not") {
+      this.compileExpression(node.operand)
+      return
+    }
+    this.compileExpression(node.left)
+    this.compileExpression(node.right)
   }
 
   /** Resolves the field/alias and validates it against the schema */
-  private resolveComparison(node: ComparisonNode): Comparison {
+  private compileComparison(node: ComparisonNode): Comparison {
     // field is either the full field name or an alias
     const field = this.resolveField(node.field) ?? node.field
     const fieldConfig = this.schema[field]
@@ -67,6 +97,12 @@ export class FilterEvaluator extends BaseEvaluator {
       )
     }
 
+    const baseComparison = { field, isCaseInsensitive, value }
+    const comparison: Comparison =
+      operator === "~="
+        ? { ...baseComparison, operator, regex: compileRegex(value, isCaseInsensitive, field) }
+        : { ...baseComparison, operator }
+
     const isValidNumber = parseNumber(value) !== undefined
 
     // this check is not specific to any field type, but rather a general rule for numeric operators
@@ -79,12 +115,12 @@ export class FilterEvaluator extends BaseEvaluator {
 
     if (!fieldConfig) {
       // if the field isn't in the schema and allowUnknownFields is true, give the field back as is
-      if (this.options.allowUnknownFields) return { field, isCaseInsensitive, operator, value }
+      if (this.options.allowUnknownFields) return comparison
       throw new FilterEvaluatorError(`Unknown field '${field}'`)
     }
 
     // `""` only gets here with `==` or `!=`, and an empty check is valid for every field type.
-    if (value === "") return { field, isCaseInsensitive, operator, value }
+    if (value === "") return comparison
 
     const { type } = fieldConfig
 
@@ -99,11 +135,25 @@ export class FilterEvaluator extends BaseEvaluator {
         throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${type})`)
     }
 
-    return { field, isCaseInsensitive, operator, value }
+    return comparison
+  }
+
+  /** Evaluate a FilterNode against a data object */
+  public evaluateFilter(node: FilterNode, data: DataObject): boolean {
+    return this.evaluateExpression(node.expression, data)
+  }
+
+  private evaluateExpression(node: ExpressionNode, data: DataObject): boolean {
+    if (node.type === "match_all") return true
+    else if (node.type === "comparison") return this.evaluateComparison(node, data)
+    else if (node.type === "not") return this.evaluateNot(node, data)
+    // `node.type` is either "and" or "or"
+    return this.evaluateLogical(node, data)
   }
 
   private evaluateComparison(node: ComparisonNode, data: DataObject): boolean {
-    const { field, operator, value, isCaseInsensitive } = this.resolveComparison(node)
+    const comparison = this.getComparison(node)
+    const { field, operator, value, isCaseInsensitive } = comparison
 
     // if the data doesn't have the field at all, it shouldn't be matched
     if (!Object.hasOwn(data, field)) return false
@@ -113,7 +163,7 @@ export class FilterEvaluator extends BaseEvaluator {
     // we only want to compare against string, number, boolean, undefined, or null values
     if (!isComparableDataValue(dataValue)) return false
 
-    // `resolveComparison()` only allows `""` with `==` or `!=`, so this is an empty check.
+    // `compileComparison()` only allows `""` with `==` or `!=`, so this is an empty check.
     if (value === "") return operator === "==" ? isEmpty(dataValue) : !isEmpty(dataValue)
 
     // Below, we coerce dataValue to a string. If dataValue is undefined/null, a query like 'field == undefined' will match, which we don't want
@@ -130,16 +180,8 @@ export class FilterEvaluator extends BaseEvaluator {
     if (operator === "*=") return dataValueString.includes(valueString)
     if (operator === "^=") return dataValueString.startsWith(valueString)
     if (operator === "$=") return dataValueString.endsWith(valueString)
-    if (operator === "~=") {
-      try {
-        const flags = isCaseInsensitive ? "i" : ""
-        // using valueString/dataValueString (which might be lowercase) wouldn't make sense here
-        const regex = new RegExp(value, flags)
-        return regex.test(String(dataValue))
-      } catch {
-        return false
-      }
-    }
+    // Test the original text, because `i~=` uses the `i` regex flag.
+    if (operator === "~=") return comparison.regex.test(String(dataValue))
 
     const valueNumber = Number(value)
     const dataValueNumber = Number(dataValue)

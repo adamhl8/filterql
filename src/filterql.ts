@@ -31,7 +31,7 @@ export class FilterQL {
 
   /** Filter and apply operations to a data array with the given query */
   public query<T extends DataObject>(data: T[], query: string): T[] {
-    const ast = this.parse(query)
+    const ast = this.parser.parse(this.lexer.tokenize(query))
     const filteredData = this.applyFilter(data, ast.filter)
     return this.applyOperations(filteredData, ast.operations)
   }
@@ -40,9 +40,14 @@ export class FilterQL {
    * Parse a query string into an `ASTNode` containing the `FilterNode` and `OperationNode[]`
    *
    * You can use the returned `ASTNode` with the `applyFilter` and `applyOperations` methods
+   *
+   * Throws if the filter is invalid for the schema
    */
   public parse(query: string): ASTNode {
-    return this.parser.parse(this.lexer.tokenize(query))
+    const ast = this.parser.parse(this.lexer.tokenize(query))
+    // Compile so an invalid filter throws here, before any data is filtered.
+    this.filterEvaluator.compile(ast.filter)
+    return ast
   }
 
   /** Apply the given `FilterNode` to a data array */

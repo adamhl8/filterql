@@ -213,14 +213,6 @@ describe("FilterEvaluator", () => {
       expect(result).toBeTrue()
     })
 
-    it("should handle invalid regex gracefully", () => {
-      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
-      const node = parseQuery('title ~= "[invalid"').filter
-      const result = filterEvaluator.evaluateFilter(node, testDataObject)
-
-      expect(result).toBeFalse() // Invalid regex returns no matches
-    })
-
     it("should handle greater than or equal", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery("rating >= 8.7").filter
@@ -384,15 +376,6 @@ describe("FilterEvaluator", () => {
       )
     })
 
-    it.each(['" "', "0x10", "Infinity"])("should throw on non-decimal number value %s", (value) => {
-      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
-      const node = parseQuery(`rating == ${value}`).filter
-      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
-        "FilterEvaluatorError",
-        `Invalid value '${value.replaceAll('"', "")}' for field 'rating' (number)`,
-      )
-    })
-
     it.each([
       ["title", "*="],
       ["title", ">="],
@@ -425,6 +408,15 @@ describe("FilterEvaluator", () => {
       )
     })
 
+    it.each(['" "', "0x10", "Infinity"])("should throw on non-decimal number value %s", (value) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(`rating == ${value}`).filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        `Invalid value '${value.replaceAll('"', "")}' for field 'rating' (number)`,
+      )
+    })
+
     it("should throw when a numeric operator is not used with a number", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery("year <= hello").filter
@@ -440,6 +432,24 @@ describe("FilterEvaluator", () => {
       expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
         "FilterEvaluatorError",
         "Invalid value 'hello' for field 'monitored' (boolean)",
+      )
+    })
+
+    it("should throw on an invalid regex", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery('title ~= "[invalid"').filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid regex '[invalid' for field 'title'",
+      )
+    })
+
+    it("should throw on an invalid regex for an unknown field", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
+      const node = parseQuery('bar i~= "(a"').filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid regex '(a' for field 'bar'",
       )
     })
   })

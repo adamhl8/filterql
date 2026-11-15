@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test"
 import { testData, testSchema } from "#__tests__/test-utils.ts"
 import { FilterQL } from "#filterql.ts"
 import type { OperationMap } from "#operation-evaluator/types.ts"
+import type { ComparisonNode, FilterNode } from "#parser/parser.ts"
 
 describe("FilterQL", () => {
   describe("usage", () => {
@@ -37,6 +38,66 @@ describe("FilterQL", () => {
 
       expect(result).toHaveLength(2)
       expect(result.every((r) => r.title === "Inception")).toBe(true)
+    })
+  })
+
+  describe("validation", () => {
+    it("should throw from parse() on an invalid value", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      expect(() => filterql.parse("rating == abc")).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid value 'abc' for field 'rating' (number)",
+      )
+    })
+
+    it("should throw from parse() on an invalid regex", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      expect(() => filterql.parse('title ~= "(a"')).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid regex '(a' for field 'title'",
+      )
+    })
+
+    it("should throw from query() on an invalid value with empty data", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      expect(() => filterql.query([], "rating == abc")).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid value 'abc' for field 'rating' (number)",
+      )
+    })
+
+    it("should throw from applyFilter() on an invalid hand-built filter with empty data", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      const filter: FilterNode = {
+        type: "filter",
+        expression: { type: "comparison", field: "rating", operator: "==", value: "abc" },
+      }
+      expect(() => filterql.applyFilter([], filter)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid value 'abc' for field 'rating' (number)",
+      )
+    })
+
+    it("should validate comparisons nested in not, and, and or", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      expect(() => filterql.parse("!(t == Inception || (m && y == abc))")).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid value 'abc' for field 'year' (number)",
+      )
+    })
+
+    it("should throw from applyFilter() after a hand-built filter is changed", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      const comparison: ComparisonNode = { type: "comparison", field: "rating", operator: "==", value: "9" }
+      const filter: FilterNode = { type: "filter", expression: comparison }
+      filterql.applyFilter(testData, filter)
+
+      comparison.value = "abc"
+
+      expect(() => filterql.applyFilter(testData, filter)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid value 'abc' for field 'rating' (number)",
+      )
     })
   })
 
