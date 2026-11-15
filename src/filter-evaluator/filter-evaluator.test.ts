@@ -117,6 +117,64 @@ describe("FilterEvaluator", () => {
       expect(filterEvaluator.evaluateFilter(parseQuery("title <= 5").filter, { title: "10" })).toBeFalse()
     })
 
+    it.each([
+      ["title >= M", { title: "Matrix" }],
+      ["title <= M", { title: "Inception" }],
+      ["title i>= m", { title: "Matrix" }],
+      ["status >= 2024-01-01", { status: "2024-06-01" }],
+      ["status <= 2024-01-01", { status: "2023-12-31" }],
+      ["title >= 5", { title: 10 }],
+    ])("should match %s against %o on a string field", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeTrue()
+    })
+
+    it.each([
+      ["title >= M", { title: "Inception" }],
+      ["title >= m", { title: "Matrix" }],
+      ["title >= 5", { title: "abc" }],
+      ["status >= 2024", { status: "2024-06-01" }],
+    ])("should not match %s against %o on a string field", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeFalse()
+    })
+
+    it("should not throw when a range operator on an unknown field isn't used with a number", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
+      expect(filterEvaluator.evaluateFilter(parseQuery("bar >= abc").filter, { bar: "xyz" })).toBeTrue()
+    })
+
+    it.each([
+      ["bar == 5.0", { bar: 5 }],
+      ["bar == TRUE", { bar: true }],
+      ["bar != false", { bar: true }],
+      ["bar == x", { bar: "x" }],
+      ["bar >= 5", { bar: "10" }],
+      ["bar >= M", { bar: "Matrix" }],
+      ["bar ^= 19", { bar: 1999 }],
+      ["!(bar == abc)", { bar: 5 }],
+    ])("should match %s against %o on an unknown field", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeTrue()
+    })
+
+    it.each([
+      ["bar == abc", { bar: 5 }],
+      ["bar != abc", { bar: 5 }],
+      ["bar <= abc", { bar: 10 }],
+      ["bar >= 5", { bar: "abc" }],
+      ["bar == yes", { bar: true }],
+      ["bar >= abc", { bar: true }],
+      ["bar *= tr", { bar: true }],
+    ])("should not match %s against %o on an unknown field", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeFalse()
+    })
+
     it("should compare range operators numerically on unknown fields", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
       expect(filterEvaluator.evaluateFilter(parseQuery("bar >= 5").filter, { bar: 10 })).toBeTrue()
@@ -533,12 +591,12 @@ describe("FilterEvaluator", () => {
       )
     })
 
-    it("should throw when a numeric operator is not used with a number", () => {
+    it("should throw when a range operator on a number field isn't used with a number", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery("year <= hello").filter
       expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
         "FilterEvaluatorError",
-        "Invalid value 'hello' for field 'year': the '<=' operator must be used with a number",
+        "Invalid value 'hello' for field 'year' (number)",
       )
     })
 
