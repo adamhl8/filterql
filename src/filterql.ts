@@ -50,7 +50,11 @@ export class FilterQL {
     return ast
   }
 
-  /** Apply the given `FilterNode` to a data array */
+  /**
+   * Apply the given `FilterNode` to a data array
+   *
+   * Throws if the filter is invalid for the schema
+   */
   public applyFilter<T extends DataObject>(data: T[], filter: FilterNode): T[] {
     return this.filterEvaluator.filter(data, filter)
   }

@@ -45,7 +45,7 @@ const actionMovies = filterql.query(movies, "genre == Action")
 const recentGoodMovies = filterql.query(movies, "y >= 2008 && rating >= 8.5")
 
 // Sort the filtered data by using the built-in SORT operation
-const recentGoodMovies = filterql.query(movies, "year >= 2008 | SORT rating desc")
+const sortedMovies = filterql.query(movies, "year >= 2008 | SORT rating desc")
 
 // Filter using boolean shorthand
 const monitoredMovies = filterql.query(movies, "monitored")
@@ -134,6 +134,15 @@ The following comparison operators can be used in comparisons:
 - `~=` (matches regex)
 - `>=` (greater than or equal)
 - `<=` (less than or equal)
+
+`>=` and `<=` compare numerically when the value is a number, and alphabetically otherwise:
+
+```
+title >= M          // titles from "M" onward
+date >= 2024-01-01  // dates on or after January 1, 2024
+```
+
+A value like `2024` is a number, so `date >= 2024` compares numerically and won't match a date like `2024-06-01`. Use the full date instead.
 
 > [!TIP]
 > Comparisons are case-sensitive. To make them case-insensitive, prefix the comparison operator with `i`.
@@ -276,7 +285,7 @@ The schema given to the `FilterQL` constructor determines what fields and value 
 >
 > In other words, a schema's keys can be a subset of the data's keys.
 >
-> Similarly, **the schema is _not_ used to validate the data**. It is only used to validate the values given in the _query_.
+> Similarly, **the schema is _not_ used to validate the data**. It is only used to validate the values given in the _query_, and to decide how the comparison value and the data value are compared.
 >
 > See the [Handling data](#handling-data) section.
 
@@ -292,21 +301,23 @@ const schema = {
 const filterql = new FilterQL({ schema })
 ```
 
-Field types determine validation behavior:
+Field types determine which comparison values are valid:
 
-- `string`: The value must be coercible to a string (this is always the case)
-- `number`: The value must be coercible to a number
-- `boolean`: The value must be `true` or `false`
+- `string`: Any value
+- `number`: A number
+- `boolean`: `true` or `false`
 
-When a comparison value can't be coerced to the field's type, an error is thrown. For example, consider a query like `year = foo`.
+When a comparison value isn't valid for the field's type, an error is thrown. For example, consider a query like `year == foo`.
 
-- The comparison value of `foo` can't be coerced to a number, so an error is thrown.
+- The comparison value of `foo` isn't a number, so an error is thrown.
+
+Data values are converted to the field's type in the same way. For example, a data value of `"2003"` (string) in a `number` field is compared as `2003` (number). A data value that can't be converted doesn't match.
 
 ### Handling data
 
 It's important to note that query comparisons are only evaluated against certain data types.
 
-- Specifically, a data value must be one of `string`, `number`, or `boolean`, `undefined`, or `null` to be evaluated.
+- Specifically, a data value must be one of `string`, `number`, `boolean`, `undefined`, or `null` to be evaluated.
 
 For example, say we have the following data:
 
@@ -402,7 +413,7 @@ const customOperations: OperationMap = {
   ROUND: (data, args, { resolveField }) => {
     const field = resolveField(args[0]) // the first argument might be the alias of the field
     if (!field) throw new Error(`Unknown field '${args[0]}' for operation 'ROUND'`)
-    return data.map((item) => Math.round(item[field]))
+    return data.map((item) => ({ ...item, [field]: Math.round(Number(item[field])) }))
   },
 }
 
@@ -411,7 +422,7 @@ const filterql = new FilterQL({ schema: mySchema, customOperations })
 
 Three arguments are provided to a given operation function:
 
-- `data`: The data after its been filtered (and transformed by any previous operations).
+- `data`: The data after it's been filtered (and transformed by any previous operations).
 - `args`: A string array containing any arguments passed to the operation.
 - `operationHelpers`: An object containing the FilterQL instance `schema`, `options`, and a `resolveField` function.
   - The `resolveField` function takes a string and returns the full field name if it exists in the schema. Use it to support field aliases in operations. e.g. `"t" -> "title"` or `"title" -> "title"` (full field name resolves to itself).
@@ -447,10 +458,16 @@ class FilterQL {
    * Parse a query string into an `ASTNode` containing the `FilterNode` and `OperationNode[]`
    *
    * You can use the returned `ASTNode` with the `applyFilter` and `applyOperations` methods
+   *
+   * Throws if the filter is invalid for the schema
    */
   parse(query: string): ASTNode
 
-  /** Apply the given `FilterNode` to a data array */
+  /**
+   * Apply the given `FilterNode` to a data array
+   *
+   * Throws if the filter is invalid for the schema
+   */
   applyFilter<T extends DataObject>(data: T[], filter: FilterNode): T[]
 
   /** Apply the given `OperationNode[]` to a data array */
