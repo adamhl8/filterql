@@ -3,7 +3,9 @@ import type { FieldType } from "#types.ts"
 
 interface BaseComparison {
   field: string
-  value: string
+  /** The query value, converted to the field type and lowercased for case-insensitive comparisons. */
+  value: string | number | boolean
+  /** Whether to lowercase the data value before comparing. */
   isCaseInsensitive: boolean
 }
 

@@ -9,7 +9,7 @@ import type {
   LogicalOpNode,
   NotOpNode,
 } from "#parser/parser.ts"
-import type { DataObject } from "#types.ts"
+import type { DataObject, FieldType } from "#types.ts"
 
 class FilterEvaluatorError extends Error {
   public constructor(message: string) {
@@ -24,6 +24,35 @@ const parseNumber = (value: string): number | undefined => {
   const parsedNumber = Number(value)
   // oxlint-disable-next-line unicorn/prefer-number-coercion - `parseFloat()` rejects `""`, whitespace, and hex, binary, or octal literals, which `Number()` accepts
   return Number.isFinite(parsedNumber) && parsedNumber === Number.parseFloat(value) ? parsedNumber : undefined
+}
+
+/** Converts a data value to a finite number, or returns `undefined` if it can't. */
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined
+  if (typeof value === "string") return parseNumber(value)
+  return undefined
+}
+
+/** Parses `true` or `false` in any case, or returns `undefined`. */
+const parseBoolean = (value: string): boolean | undefined => {
+  const lower = value.toLowerCase()
+  if (lower === "true") return true
+  if (lower === "false") return false
+  return undefined
+}
+
+/** Converts a data value to a boolean, or returns `undefined` if it can't. */
+const toBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") return value
+  if (typeof value === "string") return parseBoolean(value)
+  return undefined
+}
+
+/** Converts a query value to the field type, or returns `undefined` if it can't. */
+const convertToFieldType = (value: string, type: FieldType): string | number | boolean | undefined => {
+  if (type === "number") return parseNumber(value)
+  if (type === "boolean") return parseBoolean(value)
+  return value
 }
 
 /** Compiles a `~=` pattern, and throws if it isn't a valid regex. */
@@ -106,7 +135,8 @@ export class FilterEvaluator extends BaseEvaluator {
       )
     }
 
-    const baseComparison = { field, isCaseInsensitive, value }
+    const resolvedValue = isCaseInsensitive ? value.toLowerCase() : value
+    const baseComparison = { field, isCaseInsensitive, value: resolvedValue }
     const comparison: Comparison =
       operator === "~="
         ? { ...baseComparison, operator, regex: compileRegex(value, isCaseInsensitive, field) }
@@ -115,10 +145,8 @@ export class FilterEvaluator extends BaseEvaluator {
     // Return before the type check, because `""` isn't a valid number or boolean.
     if (value === "") return comparison
 
-    const isValidNumber = parseNumber(value) !== undefined
-
     // Require a number on every field type, because range operators only compare numerically.
-    if (group === "range" && !isValidNumber) {
+    if (group === "range" && parseNumber(value) === undefined) {
       throw new FilterEvaluatorError(
         `Invalid value '${value}' for field '${field}': the '${operator}' operator must be used with a number`,
       )
@@ -127,19 +155,14 @@ export class FilterEvaluator extends BaseEvaluator {
     // Unknown fields have no declared type to check the value against.
     if (!fieldConfig) return comparison
 
-    const { type } = fieldConfig
+    // Skip the type check for pattern operators, because they match the value's text.
+    if (group === "pattern") return comparison
 
-    // we don't need to check for type === "string" because it's always valid
+    const convertedValue = convertToFieldType(resolvedValue, fieldConfig.type)
+    if (convertedValue === undefined)
+      throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${fieldConfig.type})`)
 
-    if (type === "number" && !isValidNumber)
-      throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${type})`)
-
-    if (type === "boolean") {
-      const lower = value.toLowerCase()
-      if (lower !== "true" && lower !== "false")
-        throw new FilterEvaluatorError(`Invalid value '${value}' for field '${field}' (${type})`)
-    }
-
+    comparison.value = convertedValue
     return comparison
   }
 
@@ -156,6 +179,7 @@ export class FilterEvaluator extends BaseEvaluator {
     return this.evaluateLogical(node, data)
   }
 
+  // oxlint-disable-next-line complexity - keep the matching for every field type in one place, as a flat list of early returns
   private evaluateComparison(node: ComparisonNode, data: DataObject): boolean {
     const comparison = this.getComparison(node)
     const { field, operator, value, isCaseInsensitive } = comparison
@@ -176,15 +200,32 @@ export class FilterEvaluator extends BaseEvaluator {
     // This check must come after the empty check, since that's the correct way to check for a ""/undefined/null value
     if (isEmpty(dataValue)) return false
 
-    const handleCaseSensitivity = (val: string) => (isCaseInsensitive ? val.toLowerCase() : val)
-    const valueString = handleCaseSensitivity(value)
-    const dataValueString = handleCaseSensitivity(String(dataValue))
+    if (typeof value === "number") {
+      const dataNumber = toNumber(dataValue)
+      // Data that can't be converted can't be compared.
+      if (dataNumber === undefined) return false
+      if (operator === "==") return dataNumber === value
+      if (operator === "!=") return dataNumber !== value
+      if (operator === ">=") return dataNumber >= value
+      return dataNumber <= value
+    }
 
-    if (operator === "==") return dataValueString === valueString
-    if (operator === "!=") return dataValueString !== valueString
-    if (operator === "*=") return dataValueString.includes(valueString)
-    if (operator === "^=") return dataValueString.startsWith(valueString)
-    if (operator === "$=") return dataValueString.endsWith(valueString)
+    if (typeof value === "boolean") {
+      const dataBoolean = toBoolean(dataValue)
+      // Data that can't be converted can't be compared.
+      if (dataBoolean === undefined) return false
+      // Boolean fields only allow `==` and `!=`.
+      return operator === "==" ? dataBoolean === value : dataBoolean !== value
+    }
+
+    // `compileComparison()` already lowercased `value` for case-insensitive comparisons.
+    const dataString = isCaseInsensitive ? String(dataValue).toLowerCase() : String(dataValue)
+
+    if (operator === "==") return dataString === value
+    if (operator === "!=") return dataString !== value
+    if (operator === "*=") return dataString.includes(value)
+    if (operator === "^=") return dataString.startsWith(value)
+    if (operator === "$=") return dataString.endsWith(value)
     // Test the original text, because `i~=` uses the `i` regex flag.
     if (operator === "~=") return comparison.regex.test(String(dataValue))
 

@@ -55,12 +55,77 @@ describe("FilterEvaluator", () => {
       expect(result).toBeTrue()
     })
 
+    it.each([
+      ["title == 10", { title: 10 }],
+      ["title == true", { title: true }],
+      ["title i== TRUE", { title: true }],
+      ["title ^= 1", { title: 10 }],
+    ])("should match %s against %o as text", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeTrue()
+    })
+
+    it.each([
+      ["title != 10", { title: 10 }],
+      ["title == 10.0", { title: 10 }],
+      ["title == TRUE", { title: true }],
+    ])("should not match %s against %o as text", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeFalse()
+    })
+
     it("should handle number fields", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery("year >= 1999").filter
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
       expect(result).toBeTrue()
+    })
+
+    it.each([
+      ["rating == 9.0", { rating: 9 }],
+      ["rating == 8.50", { rating: 8.5 }],
+      ["year == 2003", { year: "2003" }],
+      ["year >= 2000", { year: "2003" }],
+      ["year <= 2003.0", { year: 2003 }],
+    ])("should match %s numerically against %o", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeTrue()
+    })
+
+    it.each([
+      ["rating != 9.0", { rating: 9 }],
+      ["rating == 1", { rating: true }],
+      ["rating >= 1", { rating: true }],
+      ["rating <= 0", { rating: " " }],
+      ["rating >= 16", { rating: "0x10" }],
+      ["rating >= 0", { rating: Number.NaN }],
+      ["rating == 9", { rating: "abc" }],
+      ["rating != 9", { rating: "abc" }],
+    ])("should not match %s against %o", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeFalse()
+    })
+
+    it("should compare range operators numerically on string fields", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      expect(filterEvaluator.evaluateFilter(parseQuery("title >= 5").filter, { title: "10" })).toBeTrue()
+      expect(filterEvaluator.evaluateFilter(parseQuery("title <= 5").filter, { title: "10" })).toBeFalse()
+    })
+
+    it("should compare range operators numerically on unknown fields", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
+      expect(filterEvaluator.evaluateFilter(parseQuery("bar >= 5").filter, { bar: 10 })).toBeTrue()
+    })
+
+    it("should match a negated equality when the data can't be converted to a number", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery("!(rating == 9)").filter
+      expect(filterEvaluator.evaluateFilter(node, { rating: "abc" })).toBeTrue()
     })
 
     it.each(["9.0", ".5", "1e3", "-1.5"])("should accept decimal number value %s", (value) => {
@@ -76,6 +141,33 @@ describe("FilterEvaluator", () => {
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
       expect(result).toBeTrue()
+    })
+
+    it.each([
+      ["m == TRUE", { monitored: true }],
+      ["m == True", { monitored: true }],
+      ["m != TRUE", { monitored: false }],
+      ["m == false", { monitored: false }],
+      ["m", { monitored: "TRUE" }],
+      ["m == false", { monitored: "False" }],
+      ["!m", { monitored: 1 }],
+      ["!m", { monitored: "yes" }],
+    ])("should match %s against %o as a boolean", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeTrue()
+    })
+
+    it.each([
+      ["m != TRUE", { monitored: true }],
+      ["m", { monitored: 1 }],
+      ["m != true", { monitored: 1 }],
+      ["m", { monitored: "yes" }],
+      ["m != true", { monitored: "yes" }],
+    ])("should not match %s against %o as a boolean", (query, dataObject) => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery(query).filter
+      expect(filterEvaluator.evaluateFilter(node, dataObject)).toBeFalse()
     })
 
     it("should handle match-all", () => {
@@ -182,6 +274,21 @@ describe("FilterEvaluator", () => {
       const result = filterEvaluator.evaluateFilter(node, testDataObject)
 
       expect(result).toBeTrue()
+    })
+
+    it.each(["year ^= 199", "year *= 99", "year $= 999", "year ~= ^199", String.raw`year i~= ^199\d$`])(
+      "should match %s against a number field's text",
+      (query) => {
+        const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+        const node = parseQuery(query).filter
+        expect(filterEvaluator.evaluateFilter(node, testDataObject)).toBeTrue()
+      },
+    )
+
+    it("should not throw when a pattern operator's value on a number field isn't a number", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery("year *= abc").filter
+      expect(filterEvaluator.evaluateFilter(node, testDataObject)).toBeFalse()
     })
 
     it("should handle regex operator", () => {
