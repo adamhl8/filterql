@@ -59,6 +59,14 @@ export class FilterEvaluator extends BaseEvaluator {
     const operator = (isCaseInsensitive ? node.operator.slice(1) : node.operator) as BaseComparisonOperator
 
     const { value } = node
+
+    const isEmptyCheck = operator === "==" || operator === "!="
+    if (value === "" && !isEmptyCheck) {
+      throw new FilterEvaluatorError(
+        `The '${node.operator}' operator can't be used with an empty check (field '${field}'). Empty checks must use '==' or '!='.`,
+      )
+    }
+
     const isValidNumber = parseNumber(value) !== undefined
 
     // this check is not specific to any field type, but rather a general rule for numeric operators
@@ -74,6 +82,9 @@ export class FilterEvaluator extends BaseEvaluator {
       if (this.options.allowUnknownFields) return { field, isCaseInsensitive, operator, value }
       throw new FilterEvaluatorError(`Unknown field '${field}'`)
     }
+
+    // `""` only gets here with `==` or `!=`, and an empty check is valid for every field type.
+    if (value === "") return { field, isCaseInsensitive, operator, value }
 
     const { type } = fieldConfig
 
@@ -102,13 +113,8 @@ export class FilterEvaluator extends BaseEvaluator {
     // we only want to compare against string, number, boolean, undefined, or null values
     if (!isComparableDataValue(dataValue)) return false
 
-    // if the comparison value is "", it's an empty check
-    if (value === "") {
-      if (operator === "==") return isEmpty(dataValue)
-      if (operator === "!=") return !isEmpty(dataValue)
-      // it doesn't make sense to do empty checks with other operators
-      return false
-    }
+    // `resolveComparison()` only allows `""` with `==` or `!=`, so this is an empty check.
+    if (value === "") return operator === "==" ? isEmpty(dataValue) : !isEmpty(dataValue)
 
     // Below, we coerce dataValue to a string. If dataValue is undefined/null, a query like 'field == undefined' will match, which we don't want
     // To be clear, a query like 'field == undefined' is a query for the *string* "undefined", not a literal undefined value

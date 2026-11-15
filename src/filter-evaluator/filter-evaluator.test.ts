@@ -339,12 +339,19 @@ describe("FilterEvaluator", () => {
       expect(result).toBeTrue()
     })
 
-    it("should handle empty string with contains operator", () => {
+    it("should handle not empty comparisons on number fields", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
-      const node = parseQuery('title *= ""').filter
+      const node = parseQuery('rating != ""').filter
       const result = filterEvaluator.evaluateFilter(node, dataWithEmpty)
 
-      expect(result).toBeFalse() // Nothing contains empty string
+      expect(result).toBeTrue()
+    })
+
+    it("should handle empty checks on boolean fields", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+
+      expect(filterEvaluator.evaluateFilter(parseQuery('monitored == ""').filter, dataWithEmpty)).toBeFalse()
+      expect(filterEvaluator.evaluateFilter(parseQuery('monitored != ""').filter, dataWithEmpty)).toBeTrue()
     })
   })
 
@@ -368,6 +375,15 @@ describe("FilterEvaluator", () => {
       )
     })
 
+    it("should reject unknown fields in an empty check", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery('bar == ""').filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Unknown field 'bar'",
+      )
+    })
+
     it.each(['" "', "0x10", "Infinity"])("should throw on non-decimal number value %s", (value) => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery(`rating == ${value}`).filter
@@ -377,12 +393,26 @@ describe("FilterEvaluator", () => {
       )
     })
 
-    it("should throw when a numeric operator is used with an empty value", () => {
+    it.each([
+      ["title", "*="],
+      ["title", ">="],
+      ["rating", "<="],
+      ["monitored", "i^="],
+    ])("should throw when %s %s is used with an empty value", (field, operator) => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
-      const node = parseQuery('rating >= ""').filter
+      const node = parseQuery(`${field} ${operator} ""`).filter
       expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
         "FilterEvaluatorError",
-        "Invalid value '' for field 'rating': the '>=' operator must be used with a number",
+        `The '${operator}' operator can't be used with an empty check (field '${field}'). Empty checks must use '==' or '!='.`,
+      )
+    })
+
+    it("should throw when an unknown field is used with an empty value and a non-empty-check operator", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, { allowUnknownFields: true })
+      const node = parseQuery('bar $= ""').filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "The '$=' operator can't be used with an empty check (field 'bar'). Empty checks must use '==' or '!='.",
       )
     })
 
