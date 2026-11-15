@@ -26,6 +26,8 @@ type HandlerFn = (currentWord: CurrentWord, tokenStart: number) => Token | Token
  * type, and the lexer should try the next token type.
  *
  * Each handler needs to correctly handle an empty `""` string.
+ *
+ * Quoting makes a word a literal, so the grouping, logical, and pipe handlers skip quoted words.
  */
 type TokenHandlers<T extends string = string> = Record<T, HandlerFn>
 
@@ -54,33 +56,33 @@ export class Lexer {
   private isFilter = true
 
   private readonly filterTokenHandlers = {
-    LPAREN: ({ word }, tokenStart) => {
+    LPAREN: ({ word, isQuoted }, tokenStart) => {
       const lparen = filterTokenMap.LPAREN
-      if (word !== lparen) return
+      if (isQuoted || word !== lparen) return
 
       return { type: "LPAREN", value: lparen, position: tokenStart }
     },
-    RPAREN: ({ word }, tokenStart) => {
+    RPAREN: ({ word, isQuoted }, tokenStart) => {
       const rparen = filterTokenMap.RPAREN
-      if (word !== rparen) return
+      if (isQuoted || word !== rparen) return
 
       return { type: "RPAREN", value: rparen, position: tokenStart }
     },
-    NOT: ({ word }, tokenStart) => {
+    NOT: ({ word, isQuoted }, tokenStart) => {
       const not = filterTokenMap.NOT
-      if (word !== not) return
+      if (isQuoted || word !== not) return
 
       return { type: "NOT", value: not, position: tokenStart }
     },
-    AND: ({ word }, tokenStart) => {
+    AND: ({ word, isQuoted }, tokenStart) => {
       const and = filterTokenMap.AND
-      if (word !== and) return
+      if (isQuoted || word !== and) return
 
       return { type: "AND", value: and, position: tokenStart }
     },
-    OR: ({ word }, tokenStart) => {
+    OR: ({ word, isQuoted }, tokenStart) => {
       const or = filterTokenMap.OR
-      if (word !== or) return
+      if (isQuoted || word !== or) return
 
       return { type: "OR", value: or, position: tokenStart }
     },
@@ -114,17 +116,19 @@ export class Lexer {
 
       return { type: "MATCH_ALL", value: word, position: tokenStart }
     },
-    FIELD: ({ word }, tokenStart) => {
+    FIELD: ({ word, isQuoted }, tokenStart) => {
       if (!word) return
 
+      // A quoted field is a literal, so don't split attached operators off it.
+      if (isQuoted) return { type: "FIELD", value: word, position: tokenStart }
       return Lexer.tokenizeAttachedOperators(word, tokenStart, "FIELD")
     },
   } satisfies TokenHandlers<FilterTokenType>
 
   private readonly operationTokenHandlers = {
-    PIPE: ({ word }, tokenStart) => {
+    PIPE: ({ word, isQuoted }, tokenStart) => {
       const pipe = operationTokenMap.PIPE
-      if (word !== pipe) return
+      if (isQuoted || word !== pipe) return
 
       return { type: "PIPE", value: pipe, position: tokenStart }
     },

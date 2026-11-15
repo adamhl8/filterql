@@ -101,6 +101,23 @@ describe("FilterQL", () => {
     })
   })
 
+  describe("quoted values", () => {
+    it.each(["(", ")", "!", "&&", "||"])("should match a quoted %s value as text", (value) => {
+      const filterql = new FilterQL({ schema: testSchema })
+      expect(filterql.query([{ title: value }, { title: "other" }], `title == "${value}"`)).toStrictEqual([
+        { title: value },
+      ])
+    })
+
+    it("should throw the invalid regex error for a quoted parenthesis", () => {
+      const filterql = new FilterQL({ schema: testSchema })
+      expect(() => filterql.parse('title ~= "("')).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Invalid regex '(' for field 'title'",
+      )
+    })
+  })
+
   describe("reuse", () => {
     it("should return the same results when one instance runs several queries", () => {
       const queries = [

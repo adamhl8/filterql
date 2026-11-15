@@ -125,6 +125,34 @@ describe("Lexer", () => {
       expect(tokens).toStrictEqual(expected)
     })
 
+    it.each(["(", ")", "!", "&&", "||"])("should tokenize a quoted %s value as a VALUE", (operator) => {
+      const query = `field == "${operator}"`
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "field", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
+        { type: "VALUE", value: operator, position: 9 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toStrictEqual(expected)
+    })
+
+    it("should not split attached operators off a quoted field", () => {
+      const query = '"(a" == x'
+
+      const expected: Token[] = [
+        { type: "FIELD", value: "(a", position: 0 },
+        { type: "COMPARISON_OPERATOR", value: "==", position: 5 },
+        { type: "VALUE", value: "x", position: 8 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toStrictEqual(expected)
+    })
+
     it("should handle quoted words", () => {
       const query = '"field" "==" "value"'
 
@@ -479,6 +507,21 @@ describe("Lexer", () => {
       { type: "COMPARISON_OPERATOR", value: "==", position: 6 },
       { type: "VALUE", value: "value", position: 9 },
     ]
+
+    it("should tokenize a quoted pipe in an operation as an argument", () => {
+      const query = `${baseQuery} | SORT "|"`
+
+      const expected: Token[] = [
+        ...baseExpected,
+        { type: "PIPE", value: "|", position: 15 },
+        { type: "OPERATION_NAME", value: "SORT", position: 17 },
+        { type: "OPERATION_ARGUMENT", value: "|", position: 22 },
+        createEofToken(query),
+      ]
+
+      const tokens = new Lexer().tokenize(query)
+      expect(tokens).toStrictEqual(expected)
+    })
 
     it("should handle operation", () => {
       const query = `${baseQuery} | operation_name arg1 arg2`
