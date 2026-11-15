@@ -1,3 +1,35 @@
+## [3.1.0](https://github.com/adamhl8/filterql/compare/v3.0.6..v3.1.0) - 2026-11-15
+
+### ✨ Improvements
+
+- compare string fields alphabetically and convert unknown fields per row ([6a1a38b](https://github.com/adamhl8/filterql/commit/6a1a38b2421e47b62a336b29405f4e34e92838cd) by @adamhl8)
+
+- group operators and reject range and pattern operators on boolean fields ([f3a6162](https://github.com/adamhl8/filterql/commit/f3a616254df73e85ef00cee712015ee1a129a65e) by @adamhl8)
+
+- fail invalid empty checks during comparison resolution ([f4771c8](https://github.com/adamhl8/filterql/commit/f4771c80d1c10ddbfaba81f61b2555f4a9d0f087) by @adamhl8)
+
+- add stricter number parsing ([4a60a07](https://github.com/adamhl8/filterql/commit/4a60a07816e62c30c7ccf704a265c231ed6957ff) by @adamhl8)
+
+### ⚡ Performance
+
+- compile the filter once and cache the built comparisons ([c6497ab](https://github.com/adamhl8/filterql/commit/c6497ab183c057f2ca0367a8ed050dbd548fabd1) by @adamhl8)
+
+### 🐛 Bug Fixes
+
+- treat quoted operator characters as literal values ([16574e6](https://github.com/adamhl8/filterql/commit/16574e6ad3853c248bc641e4bb82a30e62b2e107) by @adamhl8)
+
+- convert query and data values to the field type ([b685674](https://github.com/adamhl8/filterql/commit/b685674ea42d5bb77f2c78e983e7f9fed7d40e66) by @adamhl8)
+
+- reset the lexer and parser after each query ([5054f6e](https://github.com/adamhl8/filterql/commit/5054f6ea0fea44f191df21f8f0a14ab7eea27f68) by @adamhl8)
+
+### ⚙️ Miscellaneous Tasks
+
+- _(deps)_ update dependencies ([de5ccb7](https://github.com/adamhl8/filterql/commit/de5ccb7266a2230a9d592b36891b11986eded1fe) by @adamhl8)
+
+### 📚 Documentation
+
+- update readme ([e864036](https://github.com/adamhl8/filterql/commit/e864036eb2d6a5496557315573640dff37a171e8) by @adamhl8)
+
 ## [3.0.6](https://github.com/adamhl8/filterql/compare/v3.0.5..v3.0.6) - 2026-10-26
 
 ### ⚙️ Miscellaneous Tasks
