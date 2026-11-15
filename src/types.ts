@@ -1,4 +1,4 @@
-type FieldType = "string" | "number" | "boolean"
+export type FieldType = "string" | "number" | "boolean"
 
 interface FieldConfig {
   type: FieldType

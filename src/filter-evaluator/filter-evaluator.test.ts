@@ -380,13 +380,22 @@ describe("FilterEvaluator", () => {
       ["title", "*="],
       ["title", ">="],
       ["rating", "<="],
-      ["monitored", "i^="],
+      ["year", "i^="],
     ])("should throw when %s %s is used with an empty value", (field, operator) => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
       const node = parseQuery(`${field} ${operator} ""`).filter
       expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
         "FilterEvaluatorError",
         `The '${operator}' operator can't be used with an empty check (field '${field}'). Empty checks must use '==' or '!='.`,
+      )
+    })
+
+    it("should report an unknown field before an empty check error", () => {
+      const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+      const node = parseQuery('bar *= ""').filter
+      expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+        "FilterEvaluatorError",
+        "Unknown field 'bar'",
       )
     })
 
@@ -425,6 +434,18 @@ describe("FilterEvaluator", () => {
         "Invalid value 'hello' for field 'year': the '<=' operator must be used with a number",
       )
     })
+
+    it.each([">=", "<=", "i>=", "*=", "^=", "$=", "~="])(
+      "should throw when %s is used on a boolean field",
+      (operator) => {
+        const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
+        const node = parseQuery(`m ${operator} true`).filter
+        expect(() => filterEvaluator.evaluateFilter(node, testDataObject)).toThrowErrorWithNameAndMessage(
+          "FilterEvaluatorError",
+          `The '${operator}' operator can't be used on boolean field 'monitored'`,
+        )
+      },
+    )
 
     it("should throw on an invalid value for a boolean field", () => {
       const filterEvaluator = new FilterEvaluator(testSchema, testOptions)
